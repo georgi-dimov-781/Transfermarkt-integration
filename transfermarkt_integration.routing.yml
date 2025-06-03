@@ -1,0 +1,63 @@
+transfermarkt_integration.settings:
+  path: '/admin/config/services/transfermarkt'
+  defaults:
+    _form: '\Drupal\transfermarkt_integration\Form\TransfermarktSettingsForm'
+    _title: 'Transfermarkt Integration Settings'
+  requirements:
+    _permission: 'administer transfermarkt integration'
+
+transfermarkt_integration.manual_update:
+  path: '/admin/config/services/transfermarkt/update'
+  defaults:
+    _form: '\Drupal\transfermarkt_integration\Form\TransfermarktUpdateForm'
+    _title: 'Update Transfermarkt Data'
+  requirements:
+    _permission: 'administer transfermarkt integration'
+
+transfermarkt_integration.player_import:
+  path: '/admin/config/services/transfermarkt/import-player'
+  defaults:
+    _form: '\Drupal\transfermarkt_integration\Form\PlayerImportForm'
+    _title: 'Import Player from Transfermarkt'
+  requirements:
+    _permission: 'administer transfermarkt integration'
+
+transfermarkt_integration.team_import:
+  path: '/admin/config/services/transfermarkt/import-team'
+  defaults:
+    _form: '\Drupal\transfermarkt_integration\Form\TeamImportForm'
+    _title: 'Import Team from Transfermarkt'
+  requirements:
+    _permission: 'administer transfermarkt integration'
+
+transfermarkt_integration.competition_import:
+  path: '/admin/config/services/transfermarkt/import-competition'
+  defaults:
+    _form: '\Drupal\transfermarkt_integration\Form\CompetitionImportForm'
+    _title: 'Import Competition from Transfermarkt'
+  requirements:
+    _permission: 'administer transfermarkt integration' 
+
+transfermarkt_integration.team_squad:
+  path: '/node/{node}/squad'
+  defaults:
+    _controller: '\Drupal\transfermarkt_integration\Controller\TeamSquadController::showSquad'
+    _title_callback: '\Drupal\transfermarkt_integration\Controller\TeamSquadController::getTitle'
+  requirements:
+    _custom_access: '\Drupal\transfermarkt_integration\Controller\TeamSquadController::access'
+  options:
+    parameters:
+      node:
+        type: entity:node
+
+transfermarkt_integration.import_squad_player:
+  path: '/node/{node}/squad/import/{player_id}'
+  defaults:
+    _controller: '\Drupal\transfermarkt_integration\Controller\TeamSquadController::importPlayer'
+    _title: 'Import Player'
+  requirements:
+    _custom_access: '\Drupal\transfermarkt_integration\Controller\TeamSquadController::access'
+  options:
+    parameters:
+      node:
+        type: entity:node 

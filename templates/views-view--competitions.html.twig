@@ -1,0 +1,108 @@
+{#
+/**
+ * @file
+ * Default theme implementation for the Competitions view.
+ *
+ * Available variables:
+ * - attributes: Remaining HTML attributes for the element.
+ * - css_name: A CSS-safe version of the view name.
+ * - css_class: The user-specified classes names.
+ * - header: The view header.
+ * - footer: The view footer.
+ * - rows: The results of the view query, if any.
+ * - empty: The empty text to display if the view is empty.
+ * - pager: The pager next/prev links to display, if any.
+ * - exposed: Exposed widget form/info to display.
+ * - feed_icons: Feed icons to display, if any.
+ * - more: An optional link to the next page of results.
+ * - title: Title of the view, only used when displaying in the admin preview.
+ * - title_prefix: Additional output populated by modules.
+ * - title_suffix: Additional output populated by modules.
+ * - attachment_before: An optional attachment before the content.
+ * - attachment_after: An optional attachment after the content.
+ * - dom_id: Unique id for every view being printed to give unique class for filtering.
+ *
+ * @see template_preprocess_views_view()
+ *
+ * @ingroup themeable
+ */
+#}
+{%
+  set classes = [
+    'view',
+    'view-' ~ id|clean_class,
+    'view-id-' ~ id,
+    'view-display-id-' ~ display_id,
+    dom_id ? 'js-view-dom-id-' ~ dom_id,
+    'transfermarkt-competitions-view',
+  ]
+%}
+
+<div{{ attributes.addClass(classes) }}>
+  {{ title_prefix }}
+  {% if title %}
+    <h2 class="transfermarkt-view-title">{{ title }}</h2>
+  {% endif %}
+  {{ title_suffix }}
+
+  {% if header %}
+    <header class="transfermarkt-view-header">
+      {{ header }}
+    </header>
+  {% endif %}
+
+  {% if exposed %}
+    <div class="transfermarkt-view-filters">
+      <div class="filters-inner">
+        <h3 class="filters-title">{{ 'Filter Competitions'|t }}</h3>
+        {{ exposed }}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if attachment_before %}
+    <div class="attachment attachment-before">
+      {{ attachment_before }}
+    </div>
+  {% endif %}
+
+  {% if rows %}
+    <div class="transfermarkt-competitions-container">
+      {{ rows }}
+    </div>
+  {% elseif empty %}
+    <div class="transfermarkt-view-empty">
+      {{ empty }}
+    </div>
+  {% endif %}
+
+  {% if pager %}
+    <div class="transfermarkt-view-pager">
+      {{ pager }}
+    </div>
+  {% endif %}
+
+  {% if attachment_after %}
+    <div class="attachment attachment-after">
+      {{ attachment_after }}
+    </div>
+  {% endif %}
+
+  {% if more %}
+    <div class="transfermarkt-view-more-link">
+      {{ more }}
+    </div>
+  {% endif %}
+
+  {% if footer %}
+    <footer class="transfermarkt-view-footer">
+      {{ footer }}
+    </footer>
+  {% endif %}
+
+  {% if feed_icons %}
+    <div class="feed-icons">
+      {{ feed_icons }}
+    </div>
+  {% endif %}
+</div> 

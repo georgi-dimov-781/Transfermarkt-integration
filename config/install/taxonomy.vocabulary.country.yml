@@ -1,0 +1,9 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - transfermarkt_integration
+name: Country
+vid: country
+description: 'Countries for teams and competitions'
+weight: 0 

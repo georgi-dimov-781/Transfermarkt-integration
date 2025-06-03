@@ -1,0 +1,63 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a team card.
+ *
+ * Available variables:
+ * - name: The team name.
+ * - logo: The team logo URL.
+ * - league: The team's league.
+ * - position: The team's league position.
+ * - coach: The team's coach.
+ * - market_value: The team's market value.
+ * - url: The team profile URL.
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="transfermarkt-team-card">
+  {% if url %}
+    <a href="{{ url }}" class="team-card-link">
+  {% endif %}
+  
+  <div class="team-card-inner">
+    <div class="team-card-header">
+      <h3 class="team-name">{{ name }}</h3>
+      {% if league %}
+        <div class="team-league">{{ league }}</div>
+      {% endif %}
+    </div>
+    
+    <div class="team-card-body">
+      {% if logo %}
+        <div class="team-logo">
+          <img src="{{ logo }}" alt="{{ name }}" />
+        </div>
+      {% endif %}
+      
+      <div class="team-details">
+        {% if position %}
+          <div class="team-position">
+            <span class="label">{{ 'Position'|t }}:</span> {{ position }}
+          </div>
+        {% endif %}
+        
+        {% if coach %}
+          <div class="team-coach">
+            <span class="label">{{ 'Coach'|t }}:</span> {{ coach }}
+          </div>
+        {% endif %}
+        
+        {% if market_value %}
+          <div class="team-market-value">
+            <span class="label">{{ 'Market Value'|t }}:</span> {{ market_value }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  {% if url %}
+    </a>
+  {% endif %}
+</div> 

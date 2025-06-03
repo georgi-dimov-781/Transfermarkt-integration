@@ -1,0 +1,30 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_position
+    - node.type.player
+    - taxonomy.vocabulary.position
+  module:
+    - transfermarkt_integration
+id: node.player.field_position
+field_name: field_position
+entity_type: node
+bundle: player
+label: Position
+description: 'Player position'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      position: position
+    sort:
+      field: name
+      direction: asc
+    auto_create: true
+    auto_create_bundle: ''
+field_type: entity_reference 

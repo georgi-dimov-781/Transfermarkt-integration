@@ -1,0 +1,18 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_standings_data
+    - node.type.competition
+id: node.competition.field_standings_data
+field_name: field_standings_data
+entity_type: node
+bundle: competition
+label: 'Standings Data'
+description: 'JSON data containing the standings information for this competition'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long 

@@ -1,0 +1,6 @@
+services:
+  transfermarkt_integration.commands:
+    class: \Drupal\transfermarkt_integration\Drush\Commands\TransfermarktDrushCommands
+    arguments: ['@transfermarkt_integration.competition_service', '@transfermarkt_integration.team_service', '@transfermarkt_integration.player_service', '@transfermarkt_integration.api_service', '@entity_type.manager']
+    tags:
+      - { name: drush.command } 

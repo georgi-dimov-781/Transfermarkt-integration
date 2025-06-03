@@ -1,0 +1,579 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Transfermarkt Integration module.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Config\ConfigFactory;
+
+/**
+ * Implements hook_install().
+ */
+function transfermarkt_integration_install() {
+  // Set the initial last update time to ensure cron doesn't run immediately.
+  \Drupal::state()->set('transfermarkt_integration.last_update', \Drupal::time()->getRequestTime());
+  \Drupal::logger('transfermarkt_integration')->notice('Transfermarkt Integration module installed successfully.');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function transfermarkt_integration_uninstall() {
+  // Delete state variables.
+  \Drupal::state()->delete('transfermarkt_integration.last_update');
+  
+  try {
+    // Use a simple approach to delete content directly
+    $node_types = ['player', 'team', 'competition'];
+    foreach ($node_types as $type) {
+      $nids = \Drupal::entityQuery('node')
+        ->condition('type', $type)
+        ->accessCheck(FALSE)
+        ->execute();
+        
+      if (!empty($nids)) {
+        $storage = \Drupal::entityTypeManager()->getStorage('node');
+        $entities = $storage->loadMultiple($nids);
+        $storage->delete($entities);
+        \Drupal::logger('transfermarkt_integration')->notice('@count @type nodes deleted.', [
+          '@count' => count($nids),
+          '@type' => $type,
+        ]);
+      }
+    }
+    
+    // Try to run the full cleanup 
+    try {
+      // Delete all content and configuration
+      _transfermarkt_integration_delete_content();
+      _transfermarkt_integration_delete_config();
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('transfermarkt_integration')->error('Error during content/config deletion: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+    
+    // Always run the final cleanup which uses a safer approach
+    _transfermarkt_integration_final_cleanup();
+    
+    \Drupal::logger('transfermarkt_integration')->notice('Transfermarkt Integration module uninstalled successfully.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('transfermarkt_integration')->error('Error during uninstall: @message', [
+      '@message' => $e->getMessage(),
+    ]);
+  }
+}
+
+/**
+ * Implements hook_modules_uninstalled().
+ */
+function transfermarkt_integration_modules_uninstalled($modules) {
+  if (in_array('transfermarkt_integration', $modules)) {
+    try {
+      // Make sure all module content and configuration is deleted
+      _transfermarkt_integration_delete_content();
+      _transfermarkt_integration_delete_config();
+      _transfermarkt_integration_final_cleanup();
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('transfermarkt_integration')->error('Error during modules_uninstalled cleanup: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+  }
+}
+
+/**
+ * Delete all content created by the module.
+ */
+function _transfermarkt_integration_delete_content() {
+  try {
+    // Get database connection
+    $database = \Drupal::database();
+    $entity_type_manager = \Drupal::entityTypeManager();
+    
+    // Delete all nodes created by this module
+    $node_types = ['player', 'team', 'competition'];
+    foreach ($node_types as $type) {
+      try {
+        $nids = \Drupal::entityQuery('node')
+          ->condition('type', $type)
+          ->accessCheck(FALSE)
+          ->execute();
+          
+        if (!empty($nids)) {
+          $storage_handler = $entity_type_manager->getStorage('node');
+          $entities = $storage_handler->loadMultiple($nids);
+          $storage_handler->delete($entities);
+          \Drupal::logger('transfermarkt_integration')->notice('@count @type nodes deleted during uninstall.', [
+            '@count' => count($nids),
+            '@type' => $type,
+          ]);
+        }
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('transfermarkt_integration')->error('Error deleting @type nodes: @message', [
+          '@type' => $type,
+          '@message' => $e->getMessage(),
+        ]);
+      }
+    }
+    
+    // Delete taxonomy terms created by this module
+    $vocabularies = [
+      'competition_type',
+      'position',
+      'nationality',
+      'country',
+    ];
+    
+    foreach ($vocabularies as $vocabulary) {
+      try {
+        $tids = \Drupal::entityQuery('taxonomy_term')
+          ->condition('vid', $vocabulary)
+          ->accessCheck(FALSE)
+          ->execute();
+          
+        if (!empty($tids)) {
+          $storage_handler = $entity_type_manager->getStorage('taxonomy_term');
+          $entities = $storage_handler->loadMultiple($tids);
+          $storage_handler->delete($entities);
+          \Drupal::logger('transfermarkt_integration')->notice('@count @vocab taxonomy terms deleted during uninstall.', [
+            '@count' => count($tids),
+            '@vocab' => $vocabulary,
+          ]);
+        }
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('transfermarkt_integration')->error('Error deleting taxonomy terms from @vocab: @message', [
+          '@vocab' => $vocabulary,
+          '@message' => $e->getMessage(),
+        ]);
+      }
+    }
+    
+    // Delete any files that were used exclusively by this module
+    // We'll use a simpler approach to avoid database errors
+    try {
+      // File field definitions
+      $file_fields = [
+        'field_logo' => ['node' => ['team']],
+        'field_photo' => ['node' => ['player']],
+      ];
+      
+      // Get file usage service
+      $file_usage = \Drupal::service('file.usage');
+      
+      // Process each entity type and bundle
+      foreach ($file_fields as $field_name => $entity_info) {
+        foreach ($entity_info as $entity_type => $bundles) {
+          foreach ($bundles as $bundle) {
+            \Drupal::logger('transfermarkt_integration')->notice('Checking for files in @field on @bundle', [
+              '@field' => $field_name,
+              '@bundle' => $bundle,
+            ]);
+            
+            // Get all field data to find file references
+            $query = $entity_type_manager->getStorage($entity_type)->getQuery()
+              ->condition('type', $bundle)
+              ->exists($field_name)
+              ->accessCheck(FALSE);
+              
+            try {
+              $entity_ids = $query->execute();
+              
+              // If we found entities with this field
+              if (!empty($entity_ids)) {
+                $entities = $entity_type_manager->getStorage($entity_type)->loadMultiple($entity_ids);
+                
+                // Track how many files we process
+                $processed = 0;
+                
+                // Get file IDs from these entities
+                foreach ($entities as $entity) {
+                  if ($entity->hasField($field_name) && !$entity->get($field_name)->isEmpty()) {
+                    foreach ($entity->get($field_name) as $item) {
+                      $processed++;
+                      // Get the target ID (file ID)
+                      $fid = $item->target_id;
+                      if ($fid) {
+                        try {
+                          // Delete file usage for this entity
+                          $file = $entity_type_manager->getStorage('file')->load($fid);
+                          if ($file) {
+                            // Delete file usage record for this entity
+                            $file_usage->delete($file, 'transfermarkt_integration', $entity_type, $entity->id());
+                            
+                            // If no more usage, delete the file
+                            $usage = $file_usage->listUsage($file);
+                            $is_used = FALSE;
+                            
+                            foreach ($usage as $module => $usage_data) {
+                              foreach ($usage_data as $type => $count) {
+                                if ($count > 0) {
+                                  $is_used = TRUE;
+                                  break 2;
+                                }
+                              }
+                            }
+                            
+                            if (!$is_used) {
+                              $file->delete();
+                            }
+                          }
+                        }
+                        catch (\Exception $e) {
+                          \Drupal::logger('transfermarkt_integration')->warning('Could not process file @fid: @message', [
+                            '@fid' => $fid,
+                            '@message' => $e->getMessage(),
+                          ]);
+                        }
+                      }
+                    }
+                  }
+                }
+                
+                \Drupal::logger('transfermarkt_integration')->notice('Processed @count files from @bundle @field', [
+                  '@count' => $processed,
+                  '@bundle' => $bundle,
+                  '@field' => $field_name,
+                ]);
+              }
+            }
+            catch (\Exception $e) {
+              \Drupal::logger('transfermarkt_integration')->error('Error querying @type @bundle: @message', [
+                '@type' => $entity_type,
+                '@bundle' => $bundle,
+                '@message' => $e->getMessage(),
+              ]);
+            }
+          }
+        }
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('transfermarkt_integration')->error('Error processing files: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+    
+    // Delete custom blocks created by this module using a safer approach
+    try {
+      if ($entity_type_manager->hasDefinition('block_content')) {
+        // Get all blocks that might be created by our module
+        // We'll look for blocks that have certain strings in their info field
+        // This is a safer approach than relying on block type
+        $indicators = ['transfermarkt', 'player', 'team', 'competition'];
+        
+        // Load all blocks
+        $blocks = $entity_type_manager->getStorage('block_content')->loadMultiple();
+        $deleted = 0;
+        
+        // Examine each block
+        foreach ($blocks as $block) {
+          $info = $block->label();
+          
+          // Check if this block appears to be from our module
+          foreach ($indicators as $indicator) {
+            if (stripos($info, $indicator) !== FALSE) {
+              try {
+                // This block matches our criteria, delete it
+                $block->delete();
+                $deleted++;
+                break; // No need to check other indicators
+              }
+              catch (\Exception $e) {
+                \Drupal::logger('transfermarkt_integration')->warning('Could not delete block @id: @message', [
+                  '@id' => $block->id(),
+                  '@message' => $e->getMessage(),
+                ]);
+              }
+            }
+          }
+        }
+        
+        if ($deleted > 0) {
+          \Drupal::logger('transfermarkt_integration')->notice('@count custom blocks deleted during uninstall.', [
+            '@count' => $deleted,
+          ]);
+        }
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('transfermarkt_integration')->error('Error checking blocks: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+    
+    // Clean up any remaining field data in case entities were deleted but field data wasn't
+    $fields = [
+      'field_transfermarkt_id',
+      'field_age',
+      'field_competition_name',
+      'field_competition_type',
+      'field_country',
+      'field_current_club',
+      'field_date_of_birth',
+      'field_league',
+      'field_logo',
+      'field_market_value',
+      'field_nationality',
+      'field_photo',
+      'field_position',
+      'field_season',
+      'field_standings_data',
+      'field_team_name',
+    ];
+    
+    // Instead of direct database manipulation, we'll use a safer approach
+    // to handle field data cleanup
+    try {
+      // First make sure all entities are properly deleted
+      \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
+      
+      // Let Drupal know field storage should be purged
+      $field_storage_configs = [];
+      foreach ($fields as $field_name) {
+        $field_storage_config = \Drupal::entityTypeManager()
+          ->getStorage('field_storage_config')
+          ->load('node.' . $field_name);
+          
+        if ($field_storage_config) {
+          // Mark the field storage for deletion
+          $field_storage_config->delete();
+          $field_storage_configs[] = $field_name;
+        }
+      }
+      
+      if (!empty($field_storage_configs)) {
+        \Drupal::logger('transfermarkt_integration')->notice('Marked @count fields for purging: @fields', [
+          '@count' => count($field_storage_configs),
+          '@fields' => implode(', ', $field_storage_configs),
+        ]);
+        
+        // We'll avoid calling problematic API methods and instead rely on 
+        // the final cleanup to handle any remaining field data
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('transfermarkt_integration')->error('Error purging field data: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+    
+    \Drupal::logger('transfermarkt_integration')->notice('Content entities deleted during module uninstall.');
+  }
+  catch (\Exception $e) {
+    // Log the error but allow uninstallation to continue
+    \Drupal::logger('transfermarkt_integration')->error('Error during content cleanup: @message', [
+      '@message' => $e->getMessage(),
+    ]);
+  }
+}
+
+/**
+ * Delete all configuration provided by the module.
+ */
+function _transfermarkt_integration_delete_config() {
+  $config_factory = \Drupal::configFactory();
+  $prefix = 'core.entity_form_display.node.';
+  $suffixes = [
+    'competition',
+    'player',
+    'team',
+  ];
+  
+  // Delete entity form displays
+  foreach ($suffixes as $suffix) {
+    $config_name = $prefix . $suffix . '.default';
+    $config_factory->getEditable($config_name)->delete();
+  }
+  
+  // Delete entity view displays
+  $prefix = 'core.entity_view_display.node.';
+  foreach ($suffixes as $suffix) {
+    $config_name = $prefix . $suffix . '.default';
+    $config_factory->getEditable($config_name)->delete();
+  }
+  
+  // Delete content types
+  $prefix = 'node.type.';
+  foreach ($suffixes as $suffix) {
+    $config_name = $prefix . $suffix;
+    $config_factory->getEditable($config_name)->delete();
+  }
+  
+  // Delete vocabularies
+  $vocabularies = [
+    'taxonomy.vocabulary.competition_type',
+    'taxonomy.vocabulary.position',
+    'taxonomy.vocabulary.nationality',
+    'taxonomy.vocabulary.country',
+  ];
+  
+  foreach ($vocabularies as $vocabulary) {
+    $config_factory->getEditable($vocabulary)->delete();
+  }
+  
+  // Delete views
+  $views = [
+    'views.view.competitions',
+    'views.view.players',
+    'views.view.teams',
+  ];
+  
+  foreach ($views as $view) {
+    $config_factory->getEditable($view)->delete();
+  }
+  
+  // Delete field storage configurations
+  $field_storages = [
+    'field.storage.node.field_transfermarkt_id',
+    'field.storage.node.field_age',
+    'field.storage.node.field_competition_name',
+    'field.storage.node.field_competition_type',
+    'field.storage.node.field_country',
+    'field.storage.node.field_current_club',
+    'field.storage.node.field_date_of_birth',
+    'field.storage.node.field_league',
+    'field.storage.node.field_logo',
+    'field.storage.node.field_market_value',
+    'field.storage.node.field_nationality',
+    'field.storage.node.field_photo',
+    'field.storage.node.field_position',
+    'field.storage.node.field_season',
+    'field.storage.node.field_standings_data',
+    'field.storage.node.field_team_name',
+  ];
+  
+  foreach ($field_storages as $field_storage) {
+    $config_factory->getEditable($field_storage)->delete();
+  }
+  
+  // Delete field instance configurations
+  $field_instances = [
+    'field.field.node.competition.field_transfermarkt_id',
+    'field.field.node.player.field_transfermarkt_id',
+    'field.field.node.team.field_transfermarkt_id',
+    'field.field.node.competition.field_competition_name',
+    'field.field.node.competition.field_competition_type',
+    'field.field.node.competition.field_country',
+    'field.field.node.competition.field_season',
+    'field.field.node.competition.field_standings_data',
+    'field.field.node.player.field_age',
+    'field.field.node.player.field_current_club',
+    'field.field.node.player.field_date_of_birth',
+    'field.field.node.player.field_market_value',
+    'field.field.node.player.field_nationality',
+    'field.field.node.player.field_photo',
+    'field.field.node.player.field_position',
+    'field.field.node.team.field_country',
+    'field.field.node.team.field_league',
+    'field.field.node.team.field_logo',
+    'field.field.node.team.field_market_value',
+    'field.field.node.team.field_team_name',
+  ];
+  
+  foreach ($field_instances as $field_instance) {
+    $config_factory->getEditable($field_instance)->delete();
+  }
+  
+  // Delete module settings
+  $config_factory->getEditable('transfermarkt_integration.settings')->delete();
+  
+  \Drupal::logger('transfermarkt_integration')->notice('Deleted transfermarkt_integration configuration during uninstall.');
+}
+
+/**
+ * Final cleanup to ensure all module data is removed.
+ */
+function _transfermarkt_integration_final_cleanup() {
+  try {
+    // Clear all caches to ensure entities are properly removed
+    drupal_flush_all_caches();
+    
+    // Clean up any configuration dependencies that might be left
+    $config_factory = \Drupal::configFactory();
+    $configs = $config_factory->listAll('transfermarkt_integration');
+    foreach ($configs as $config_name) {
+      $config_factory->getEditable($config_name)->delete();
+    }
+    
+    // Alternative fallback approach for field data cleanup
+    // This avoids issues with the field storage definition API
+    $tables_to_check = [
+      'node__field_transfermarkt_id',
+      'node__field_age',
+      'node__field_competition_name',
+      'node__field_competition_type',
+      'node__field_country',
+      'node__field_current_club',
+      'node__field_date_of_birth',
+      'node__field_league',
+      'node__field_logo',
+      'node__field_market_value',
+      'node__field_nationality',
+      'node__field_photo',
+      'node__field_position',
+      'node__field_season',
+      'node__field_standings_data',
+      'node__field_team_name',
+    ];
+    
+    // Also check revision tables
+    $revision_tables = [];
+    foreach ($tables_to_check as $table) {
+      $revision_tables[] = str_replace('node__', 'node_revision__', $table);
+    }
+    
+    // Combine regular and revision tables
+    $all_tables = array_merge($tables_to_check, $revision_tables);
+    
+    $database = \Drupal::database();
+    $schema = $database->schema();
+    $tables_deleted = 0;
+    
+    foreach ($all_tables as $table) {
+      try {
+        // Check if table exists first
+        if ($schema->tableExists($table)) {
+          // Use delete instead of truncate/drop to avoid errors
+          $database->delete($table)->execute();
+          $tables_deleted++;
+        }
+      }
+      catch (\Exception $e) {
+        // Just log and continue
+        \Drupal::logger('transfermarkt_integration')->notice('Could not clean table @table: @message', [
+          '@table' => $table,
+          '@message' => $e->getMessage(),
+        ]);
+      }
+    }
+    
+    if ($tables_deleted > 0) {
+      \Drupal::logger('transfermarkt_integration')->notice('Cleaned up @count field data tables.', [
+        '@count' => $tables_deleted,
+      ]);
+    }
+    
+    // Clear entity and field caches
+    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
+    \Drupal::service('entity_type.manager')->clearCachedDefinitions();
+    
+    \Drupal::logger('transfermarkt_integration')->notice('Final cleanup completed.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('transfermarkt_integration')->error('Error during final cleanup: @message', [
+      '@message' => $e->getMessage(),
+    ]);
+  }
+} 

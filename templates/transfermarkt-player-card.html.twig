@@ -1,0 +1,92 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a player card.
+ *
+ * Available variables:
+ * - name: The player name.
+ * - photo: The player photo URL.
+ * - age: The player age.
+ * - nationality: The player nationality.
+ * - position: The player position.
+ * - market_value: The player market value.
+ * - current_club: The player's current club.
+ * - url: The player profile URL.
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="transfermarkt-player-card">
+  {% if url %}
+    <a href="{{ url }}" class="player-card-link">
+  {% endif %}
+  
+  <div class="player-card-inner">
+    <div class="player-card-header">
+      <h3 class="player-name">{{ name }}</h3>
+    </div>
+    
+    <div class="player-card-body">
+      {% if photo %}
+        <div class="player-photo">
+          <img src="{{ photo }}" alt="{{ name }}" />
+        </div>
+      {% else %}
+        <div class="player-photo no-photo">
+          <div class="no-photo-placeholder">{{ 'No photo'|t }}</div>
+        </div>
+      {% endif %}
+      
+      <div class="player-details">
+        {% if nationality %}
+          <div class="player-nationality">
+            <span class="label">{{ 'Nationality'|t }}:</span> {{ nationality }}
+          </div>
+        {% endif %}
+        
+        {% if age %}
+          <div class="player-age">
+            <span class="label">{{ 'Age'|t }}:</span> {{ age }}
+          </div>
+        {% endif %}
+        
+        {% if position %}
+          <div class="player-position">
+            <span class="label">{{ 'Position'|t }}:</span> {{ position }}
+          </div>
+        {% endif %}
+        
+        {% if market_value %}
+          <div class="player-market-value">
+            <span class="label">{{ 'Market Value'|t }}:</span> 
+            {% if market_value|length > 10 %}
+              {# This is likely a raw numeric value, format it #}
+              {% set formatted_value = market_value %}
+              {% if market_value >= 1000000 %}
+                {% set formatted_value = (market_value / 1000000)|number_format(0) ~ ' Mln. Euro' %}
+              {% elseif market_value >= 1000 %}
+                {% set formatted_value = (market_value / 1000)|number_format(0) ~ ' Thousand Euro' %}
+              {% else %}
+                {% set formatted_value = market_value|number_format(0) ~ ' Euro' %}
+              {% endif %}
+              {{ formatted_value }}
+            {% else %}
+              {# This value may already be formatted or a string #}
+              {{ market_value }}
+            {% endif %}
+          </div>
+        {% endif %}
+        
+        {% if current_club %}
+          <div class="player-current-club">
+            <span class="label">{{ 'Current Club'|t }}:</span> {{ current_club }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  {% if url %}
+    </a>
+  {% endif %}
+</div> 

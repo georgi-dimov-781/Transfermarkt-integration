@@ -1,0 +1,30 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_league
+    - node.type.competition
+    - node.type.team
+  module:
+    - transfermarkt_integration
+id: node.team.field_league
+field_name: field_league
+entity_type: node
+bundle: team
+label: League
+description: 'Team league'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:node'
+  handler_settings:
+    target_bundles:
+      competition: competition
+    sort:
+      field: title
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference 

@@ -1,0 +1,69 @@
+name: Transfermarkt Integration
+type: module
+description: Integrates Transfermarkt API to display football players, teams, and competitions data.
+core_version_requirement: ^9 || ^10
+package: Custom
+dependencies:
+  - drupal:node
+  - drupal:views
+  - drupal:field
+  - drupal:image
+  - drupal:taxonomy
+  - drupal:automated_cron
+configure: transfermarkt_integration.settings 
+config_devel:
+  install:
+    - node.type.competition
+    - node.type.player
+    - node.type.team
+    - taxonomy.vocabulary.competition_type
+    - taxonomy.vocabulary.position
+    - taxonomy.vocabulary.nationality
+    - taxonomy.vocabulary.country
+    - views.view.competitions
+    - views.view.players
+    - views.view.teams
+    - field.storage.node.field_transfermarkt_id
+    - field.storage.node.field_age
+    - field.storage.node.field_competition_name
+    - field.storage.node.field_competition_type
+    - field.storage.node.field_country
+    - field.storage.node.field_current_club
+    - field.storage.node.field_date_of_birth
+    - field.storage.node.field_league
+    - field.storage.node.field_logo
+    - field.storage.node.field_market_value
+    - field.storage.node.field_nationality
+    - field.storage.node.field_photo
+    - field.storage.node.field_position
+    - field.storage.node.field_season
+    - field.storage.node.field_standings_data
+    - field.storage.node.field_team_name
+    - field.field.node.competition.field_transfermarkt_id
+    - field.field.node.player.field_transfermarkt_id
+    - field.field.node.team.field_transfermarkt_id
+    - field.field.node.competition.field_competition_name
+    - field.field.node.competition.field_competition_type
+    - field.field.node.competition.field_country
+    - field.field.node.competition.field_season
+    - field.field.node.competition.field_standings_data
+    - field.field.node.player.field_age
+    - field.field.node.player.field_current_club
+    - field.field.node.player.field_date_of_birth
+    - field.field.node.player.field_market_value
+    - field.field.node.player.field_nationality
+    - field.field.node.player.field_photo
+    - field.field.node.player.field_position
+    - field.field.node.team.field_country
+    - field.field.node.team.field_league
+    - field.field.node.team.field_logo
+    - field.field.node.team.field_market_value
+    - field.field.node.team.field_team_name
+    - core.entity_form_display.node.competition.default
+    - core.entity_form_display.node.player.default
+    - core.entity_form_display.node.team.default
+    - core.entity_view_display.node.competition.default
+    - core.entity_view_display.node.player.default
+    - core.entity_view_display.node.team.default
+  optional:
+    - transfermarkt_integration.settings 

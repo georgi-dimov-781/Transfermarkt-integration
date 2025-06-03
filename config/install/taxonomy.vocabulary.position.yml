@@ -1,0 +1,9 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - transfermarkt_integration
+name: Position
+vid: position
+description: 'Football player positions'
+weight: 0 

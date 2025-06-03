@@ -1,0 +1,146 @@
+{#
+/**
+ * @file
+ * Theme override to display a node of type team in full view mode.
+ *
+ * Available variables:
+ * - node: The node entity with limited access to object properties and methods.
+ * - content: All node items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - attributes: HTML attributes for the containing element.
+ * - title_attributes: Same as attributes, except applied to the main title
+ *   tag that appears in the template.
+ * - content_attributes: Same as attributes, except applied to the main
+ *   content tag that appears in the template.
+ * - title_prefix: Additional output populated by modules, intended to be
+ *   displayed in front of the main title tag that appears in the template.
+ * - title_suffix: Additional output populated by modules, intended to be
+ *   displayed after the main title tag that appears in the template.
+ * - view_mode: View mode; for example, "teaser" or "full".
+ */
+#}
+{%
+  set classes = [
+    'team',
+    'node',
+    'node--' ~ node.bundle|clean_class,
+    'node--team',
+    node.isPromoted() ? 'node--promoted',
+    node.isSticky() ? 'node--sticky',
+    not node.isPublished() ? 'node--unpublished',
+    view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
+  ]
+%}
+<article{{ attributes.addClass(classes) }}>
+  <div class="node__title">
+    <div class="title-area">
+      <div class="container">
+        <div class="title-area__content">
+          <h1{{ title_attributes }}>{{ label }}</h1>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div{{ content_attributes.addClass('node__content') }}>
+    <div class="container">
+      <div class="team-profile-container">
+        <div class="team-logo-container">
+          {% if team_logo_url %}
+            <img src="{{ team_logo_url }}" alt="{{ team_logo_alt }}" class="team-logo" />
+          {% elseif content.field_logo %}
+            {{ content.field_logo }}
+          {% else %}
+            <div class="no-logo-placeholder">
+              <span class="no-logo-text">{{ 'No logo available'|t }}</span>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="team-details-container">
+          {% if content.field_team_name %}
+            <div class="team-detail-row">
+              <div class="team-detail-label">{{ 'Team Name'|t }}:</div>
+              <div class="team-detail-value">{{ content.field_team_name }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_country %}
+            <div class="team-detail-row">
+              <div class="team-detail-label">{{ 'Country'|t }}:</div>
+              <div class="team-detail-value">{{ content.field_country }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_league %}
+            <div class="team-detail-row">
+              <div class="team-detail-label">{{ 'League'|t }}:</div>
+              <div class="team-detail-value">{{ content.field_league }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_market_value %}
+            <div class="team-detail-row">
+              <div class="team-detail-label">{{ 'Market Value'|t }}:</div>
+              <div class="team-detail-value market-value">
+                {% if market_value_formatted %}
+                  {{ market_value_formatted }}
+                {% else %}
+                  {{ content.field_market_value }}
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      {# Squad section - Displays players that have been imported for this team #}
+      <div class="team-squad-container">
+        <h2>{{ 'Squad'|t }}</h2>
+        <div class="team-squad-players">
+          {% if squad_players %}
+            <div class="squad-grid">
+              {% for player in squad_players %}
+                <div class="squad-player-card">
+                  <a href="{{ player.url }}" class="squad-player-link">
+                    {% if player.photo %}
+                      <div class="squad-player-photo">
+                        <img src="{{ player.photo }}" alt="{{ player.name }}">
+                      </div>
+                    {% endif %}
+                    <div class="squad-player-info">
+                      <div class="squad-player-name">{{ player.name }}</div>
+                      {% if player.position %}
+                        <div class="squad-player-position">{{ player.position }}</div>
+                      {% endif %}
+                    </div>
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="no-players-message">{{ 'No players found in this team\'s squad.'|t }}</div>
+          {% endif %}
+        </div>
+        
+        {% if is_admin and node.field_transfermarkt_id.value %}
+          {# For administrators, display a button to access the Transfermarkt squad view 
+             This allows admins to selectively import players from the full Transfermarkt squad
+             rather than importing the entire squad at once, which can be resource intensive #}
+          <div class="admin-actions">
+            <a href="{{ path('transfermarkt_integration.team_squad', {'node': node.id}) }}" class="button button-import-squad">{{ 'View Transfermarkt Squad'|t }}</a>
+            <p class="admin-action-description">{{ 'View the complete squad from Transfermarkt and choose which players to import.'|t }}</p>
+            <p class="admin-action-note">{{ 'Note: The Transfermarkt API may have rate limits. If you encounter errors, please wait a few minutes before trying again.'|t }}</p>
+          </div>
+        {% endif %}
+      </div>
+      
+      {# Render any remaining fields that weren't explicitly included above #}
+      <div class="team-additional-info">
+        {{ content|without('field_logo', 'field_team_name', 'field_country', 'field_league', 'field_market_value', 'field_transfermarkt_id') }}
+      </div>
+    </div>
+  </div>
+</article> 

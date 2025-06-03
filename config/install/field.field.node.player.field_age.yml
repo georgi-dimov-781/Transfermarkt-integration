@@ -1,0 +1,24 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_age
+    - node.type.player
+  module:
+    - transfermarkt_integration
+id: node.player.field_age
+field_name: field_age
+entity_type: node
+bundle: player
+label: Age
+description: 'Player age'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer 

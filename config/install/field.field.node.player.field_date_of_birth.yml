@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_date_of_birth
+    - node.type.player
+  module:
+    - datetime
+    - transfermarkt_integration
+id: node.player.field_date_of_birth
+field_name: field_date_of_birth
+entity_type: node
+bundle: player
+label: 'Date of Birth'
+description: 'Player date of birth'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  datetime_type: date
+field_type: datetime 

@@ -1,0 +1,97 @@
+{#
+/**
+ * @file
+ * Default theme implementation for displaying a view as a table.
+ *
+ * Available variables:
+ * - attributes: Remaining HTML attributes for the element.
+ *   - class: HTML classes that can be used to style contextually through CSS.
+ * - title : The title of this group of rows.
+ * - header: The table header columns.
+ *   - attributes: Remaining HTML attributes for the element.
+ *   - content: HTML classes to apply to each header cell, indexed by
+ *   the header's key.
+ *   - default_classes: A flag indicating whether default classes should be
+ *     used.
+ * - caption_needed: Is the caption tag needed.
+ * - caption: The caption for this table.
+ * - accessibility_description: Extended description for the table details.
+ * - accessibility_summary: Summary for the table details.
+ * - rows: Table row items. Rows are keyed by row number.
+ *   - attributes: HTML classes to apply to each row.
+ *   - columns: Row column items. Columns are keyed by column number.
+ *     - attributes: HTML classes to apply to each column.
+ *     - content: The column content.
+ *   - default_classes: A flag indicating whether default classes should be
+ *     used.
+ * - responsive: A flag indicating whether table is responsive.
+ * - sticky: A flag indicating whether table header is sticky.
+ * - summary_element: A render array with table summary information (if any).
+ *
+ * @see template_preprocess_views_view_table()
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="transfermarkt-players-container">
+  {% for row in rows %}
+    <div class="transfermarkt-player-card">
+      <div class="player-card-inner">
+        {% if row.columns.title %}
+          <div class="player-card-header">
+            <h3 class="player-name">{{ row.columns.title.content }}</h3>
+            {% if row.columns.field_position %}
+              <div class="player-position">{{ row.columns.field_position.content }}</div>
+            {% endif %}
+          </div>
+        {% endif %}
+        
+        <div class="player-card-body">
+          {% if row.columns.field_photo %}
+            <div class="player-photo-container">
+              {{ row.columns.field_photo.content }}
+            </div>
+          {% else %}
+            <div class="player-photo-container">
+              <div class="no-photo-placeholder">
+                <span class="no-photo-text">{{ 'No photo available'|t }}</span>
+              </div>
+            </div>
+          {% endif %}
+          
+          <div class="player-details">
+            {% if row.columns.field_age %}
+              <div class="player-age">
+                <span class="label">{{ 'Age:'|t }}</span> {{ row.columns.field_age.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_nationality %}
+              <div class="player-nationality">
+                <span class="label">{{ 'Nationality:'|t }}</span> {{ row.columns.field_nationality.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_current_club %}
+              <div class="player-club">
+                <span class="label">{{ 'Club:'|t }}</span> {{ row.columns.field_current_club.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_market_value %}
+              <div class="player-market-value">
+                <span class="label">{{ 'Value:'|t }}</span> {{ row.columns.field_market_value.content }}
+              </div>
+            {% endif %}
+          </div>
+          
+          {% if row.columns.view_node %}
+            <div class="player-view-link">
+              <a href="{{ row.columns.view_node.content|render|striptags|trim }}" class="player-link">{{ 'View Profile'|t }}</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div> 

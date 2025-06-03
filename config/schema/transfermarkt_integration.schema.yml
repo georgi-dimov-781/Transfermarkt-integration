@@ -1,0 +1,25 @@
+transfermarkt_integration.settings:
+  type: config_object
+  label: 'Transfermarkt Integration Settings'
+  mapping:
+    api_base_url:
+      type: string
+      label: 'API Base URL'
+    update_interval:
+      type: integer
+      label: 'Update Interval'
+    update_players:
+      type: boolean
+      label: 'Update Players'
+    update_teams:
+      type: boolean
+      label: 'Update Teams'
+    update_competitions:
+      type: boolean
+      label: 'Update Competitions'
+    update_team_squads:
+      type: boolean
+      label: 'Update Team Squads'
+    update_competition_standings:
+      type: boolean
+      label: 'Update Competition Standings' 

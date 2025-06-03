@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_season
+    - node.type.competition
+  module:
+    - transfermarkt_integration
+id: node.competition.field_season
+field_name: field_season
+entity_type: node
+bundle: competition
+label: Season
+description: 'Competition season'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string 

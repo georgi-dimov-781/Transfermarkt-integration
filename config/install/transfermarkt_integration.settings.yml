@@ -1,0 +1,11 @@
+langcode: en
+dependencies:
+  module:
+    - transfermarkt_integration
+api_base_url: 'https://transfermarkt-api.fly.dev'
+update_interval: 86400
+update_players: true
+update_teams: true
+update_competitions: true
+update_team_squads: false
+update_competition_standings: false 

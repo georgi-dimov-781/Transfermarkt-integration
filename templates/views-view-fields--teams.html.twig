@@ -1,0 +1,81 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a team row in the Teams view.
+ *
+ * Available variables:
+ * - view: The view in use.
+ * - fields: A list of fields, each one contains:
+ *   - content: The output of the field.
+ *   - raw: The raw data for the field, if it exists. This is NOT output safe.
+ *   - class: The safe class ID to use.
+ *   - handler: The Views field handler controlling this field.
+ *   - inline: Whether or not the field should be inline.
+ *   - wrapper_element: An HTML element for a wrapper.
+ *   - wrapper_attributes: List of attributes for wrapper element.
+ *   - separator: An optional separator that may appear before a field.
+ *   - label: The field's label text.
+ *   - label_element: An HTML element for a label wrapper.
+ *   - label_attributes: List of attributes for label wrapper.
+ *   - label_suffix: Colon after the label.
+ *   - element_type: An HTML element for the field content.
+ *   - element_attributes: List of attributes for HTML element for field content.
+ *   - has_label_colon: A boolean indicating whether to display a colon after
+ *     the label.
+ *   - element_type: An HTML element for the field content.
+ *   - element_attributes: List of attributes for HTML element for field content.
+ * - row: The raw result from the query, with all data it fetched.
+ *
+ * @see template_preprocess_views_view_fields()
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="transfermarkt-team-card">
+  <a href="{{ fields.view_node.content|render|striptags|trim }}" class="team-card-link">
+    <div class="team-card-inner">
+      <div class="team-card-header">
+        <h3 class="team-name">{{ fields.title.content }}</h3>
+        {% if fields.field_league %}
+          <div class="team-league">{{ fields.field_league.content }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="team-card-body">
+        <div class="team-logo-container">
+          {% if fields.field_logo.content %}
+            {{ fields.field_logo.content }}
+          {% else %}
+            <div class="no-logo-placeholder">
+              <span class="no-logo-text">{{ 'No logo available'|t }}</span>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="team-details">
+          {% if fields.field_country.content %}
+            <div class="team-country">
+              <span class="label">{{ 'Country:'|t }}</span> {{ fields.field_country.content }}
+            </div>
+          {% endif %}
+          
+          {% if fields.field_coach.content %}
+            <div class="team-coach">
+              <span class="label">{{ 'Coach:'|t }}</span> {{ fields.field_coach.content }}
+            </div>
+          {% endif %}
+          
+          {% if fields.field_market_value.content %}
+            <div class="team-market-value">
+              <span class="label">{{ 'Value:'|t }}</span> {{ fields.field_market_value.content }}
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="team-view-link">
+          <span class="team-link">{{ 'View Team'|t }}</span>
+        </div>
+      </div>
+    </div>
+  </a>
+</div> 

@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_competition_name
+    - node.type.competition
+  module:
+    - transfermarkt_integration
+id: node.competition.field_competition_name
+field_name: field_competition_name
+entity_type: node
+bundle: competition
+label: 'Competition Name'
+description: 'Competition name'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string 

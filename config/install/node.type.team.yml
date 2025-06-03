@@ -1,0 +1,18 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - menu_ui
+    - transfermarkt_integration
+third_party_settings:
+  menu_ui:
+    available_menus:
+      - main
+    parent: 'main:'
+name: Team
+type: team
+description: 'Football team profile imported from Transfermarkt.'
+help: ''
+new_revision: true
+preview_mode: 1
+display_submitted: false 

@@ -1,0 +1,893 @@
+/* Transfermarkt Integration Module - Main Styling
+   Modern, responsive styling for football data display
+   ========================================================================== */
+
+/* ==== VARIABLES ==== */
+:root {
+  /* Colors */
+  --tm-primary: #1e293b;
+  --tm-secondary: #0ea5e9;
+  --tm-accent: #f97316;
+  --tm-text: #334155;
+  --tm-light-text: #64748b;
+  --tm-lighter-bg: #f8fafc;
+  --tm-light-bg: #f1f5f9;
+  --tm-border: #e2e8f0;
+  --tm-card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --tm-hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  
+  /* Spacing */
+  --tm-spacing-xs: 0.25rem;
+  --tm-spacing-sm: 0.5rem;
+  --tm-spacing-md: 1rem;
+  --tm-spacing-lg: 1.5rem;
+  --tm-spacing-xl: 2rem;
+  
+  /* Border radius */
+  --tm-radius-sm: 0.25rem;
+  --tm-radius-md: 0.5rem;
+  --tm-radius-lg: 0.75rem;
+  
+  /* Transitions */
+  --tm-transition: all 0.2s ease-in-out;
+}
+
+/* ==== GLOBAL STYLES ==== */
+.node.player,
+.node.team,
+.node.competition,
+.transfermarkt-players-view,
+.transfermarkt-teams-view {
+  color: var(--tm-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--tm-spacing-md);
+}
+
+.title-area {
+  background-color: var(--tm-primary);
+  color: white;
+  padding: var(--tm-spacing-lg) 0;
+  margin-bottom: var(--tm-spacing-xl);
+}
+
+.title-area h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Common styling for detail rows */
+.player-detail-row,
+.team-detail-row,
+.competition-detail-row {
+  display: flex;
+  margin-bottom: var(--tm-spacing-sm);
+  border-bottom: 1px solid var(--tm-border);
+  padding-bottom: var(--tm-spacing-sm);
+}
+
+.player-detail-label,
+.team-detail-label,
+.competition-detail-label {
+  font-weight: 600;
+  width: 140px;
+  flex-shrink: 0;
+  color: var(--tm-light-text);
+}
+
+.player-detail-value,
+.team-detail-value,
+.competition-detail-value {
+  flex-grow: 1;
+}
+
+.market-value {
+  font-weight: 600;
+  color: var(--tm-accent);
+}
+
+/* ==== CARD GRID LAYOUTS ==== */
+.transfermarkt-players-container,
+.transfermarkt-teams-container,
+.transfermarkt-competitions-container,
+.squad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--tm-spacing-lg);
+  margin: var(--tm-spacing-lg) 0;
+}
+
+/* ==== PLAYER CARD STYLING ==== */
+.transfermarkt-player-card {
+  background-color: white;
+  border-radius: var(--tm-radius-md);
+  box-shadow: var(--tm-card-shadow);
+  overflow: hidden;
+  transition: var(--tm-transition);
+  height: 100%;
+}
+
+.transfermarkt-player-card:hover {
+  box-shadow: var(--tm-hover-shadow);
+  transform: translateY(-3px);
+}
+
+.player-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.player-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.player-card-header {
+  background-color: var(--tm-primary);
+  color: white;
+  padding: var(--tm-spacing-md);
+  border-bottom: 3px solid var(--tm-secondary);
+}
+
+.player-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.player-position {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: var(--tm-spacing-xs);
+}
+
+.player-card-body {
+  padding: var(--tm-spacing-md);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.player-photo-container {
+  text-align: center;
+  margin-bottom: var(--tm-spacing-md);
+  height: 180px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-photo-container img {
+  max-height: 180px;
+  width: auto;
+  object-fit: cover;
+  border-radius: var(--tm-radius-sm);
+}
+
+.player-details {
+  flex-grow: 1;
+}
+
+.player-age,
+.player-nationality,
+.player-club,
+.player-market-value,
+.player-current-club,
+.player-position {
+  margin-bottom: var(--tm-spacing-sm);
+  font-size: 0.95rem;
+}
+
+.label {
+  font-weight: 600;
+  color: var(--tm-light-text);
+  display: inline-block;
+  min-width: 90px;
+}
+
+.player-view-link {
+  margin-top: auto;
+  padding-top: var(--tm-spacing-md);
+  text-align: center;
+}
+
+.player-link {
+  display: inline-block;
+  background-color: var(--tm-secondary);
+  color: white;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-lg);
+  border-radius: var(--tm-radius-md);
+  font-weight: 600;
+  transition: var(--tm-transition);
+}
+
+.player-link:hover {
+  background-color: var(--tm-primary);
+}
+
+.no-photo-placeholder {
+  background-color: var(--tm-light-bg);
+  border-radius: var(--tm-radius-sm);
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tm-light-text);
+  font-style: italic;
+  width: 100%;
+}
+
+/* ==== TEAM CARD STYLING ==== */
+.transfermarkt-team-card {
+  background-color: white;
+  border-radius: var(--tm-radius-md);
+  box-shadow: var(--tm-card-shadow);
+  overflow: hidden;
+  transition: var(--tm-transition);
+  height: 100%;
+}
+
+.transfermarkt-team-card:hover {
+  box-shadow: var(--tm-hover-shadow);
+  transform: translateY(-3px);
+}
+
+.team-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.team-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.team-card-header {
+  background-color: var(--tm-primary);
+  color: white;
+  padding: var(--tm-spacing-md);
+  border-bottom: 3px solid var(--tm-accent);
+}
+
+.team-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.team-league {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: var(--tm-spacing-xs);
+}
+
+.team-card-body {
+  padding: var(--tm-spacing-md);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.team-logo-container {
+  text-align: center;
+  margin-bottom: var(--tm-spacing-md);
+  height: 160px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-logo-container img {
+  max-height: 130px;
+  width: auto;
+  object-fit: contain;
+}
+
+.team-details {
+  flex-grow: 1;
+}
+
+.team-country,
+.team-coach,
+.team-market-value {
+  margin-bottom: var(--tm-spacing-sm);
+  font-size: 0.95rem;
+}
+
+.team-view-link {
+  margin-top: auto;
+  padding-top: var(--tm-spacing-md);
+  text-align: center;
+}
+
+.team-link {
+  display: inline-block;
+  background-color: var(--tm-accent);
+  color: white;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-lg);
+  border-radius: var(--tm-radius-md);
+  font-weight: 600;
+  transition: var(--tm-transition);
+}
+
+.team-link:hover {
+  background-color: var(--tm-primary);
+}
+
+.no-logo-placeholder {
+  background-color: var(--tm-light-bg);
+  border-radius: var(--tm-radius-sm);
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tm-light-text);
+  font-style: italic;
+  width: 100%;
+}
+
+/* ==== PLAYER FULL VIEW STYLING ==== */
+.player-profile-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--tm-spacing-lg);
+  margin-bottom: var(--tm-spacing-xl);
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-lg);
+}
+
+.player-photo-container {
+  text-align: center;
+}
+
+.player-photo {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--tm-radius-md);
+  box-shadow: var(--tm-card-shadow);
+}
+
+.player-additional-info {
+  margin-top: var(--tm-spacing-xl);
+}
+
+/* ==== TEAM FULL VIEW STYLING ==== */
+.team-profile-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--tm-spacing-lg);
+  margin-bottom: var(--tm-spacing-xl);
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-lg);
+}
+
+.team-logo-container {
+  text-align: center;
+}
+
+.team-logo {
+  max-width: 100%;
+  height: auto;
+  max-height: 180px;
+}
+
+.team-squad-container {
+  margin-top: var(--tm-spacing-xl);
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-lg);
+}
+
+.team-squad-container h2 {
+  margin-top: 0;
+  color: var(--tm-primary);
+  border-bottom: 2px solid var(--tm-border);
+  padding-bottom: var(--tm-spacing-sm);
+  margin-bottom: var(--tm-spacing-lg);
+}
+
+.squad-player-card {
+  background-color: var(--tm-lighter-bg);
+  border-radius: var(--tm-radius-md);
+  overflow: hidden;
+  transition: var(--tm-transition);
+}
+
+.squad-player-card:hover {
+  box-shadow: var(--tm-hover-shadow);
+  transform: translateY(-2px);
+}
+
+.squad-player-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--tm-spacing-sm);
+}
+
+.squad-player-photo {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--tm-spacing-sm);
+}
+
+.squad-player-photo img {
+  max-height: 120px;
+  width: auto;
+}
+
+.squad-player-info {
+  padding: var(--tm-spacing-sm);
+  text-align: center;
+}
+
+.squad-player-name {
+  font-weight: 600;
+  margin-bottom: var(--tm-spacing-xs);
+}
+
+.squad-player-position {
+  font-size: 0.85rem;
+  color: var(--tm-light-text);
+}
+
+.team-additional-info {
+  margin-top: var(--tm-spacing-xl);
+}
+
+/* ==== COMPETITION FULL VIEW STYLING ==== */
+.competition-profile-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--tm-spacing-lg);
+  margin-bottom: var(--tm-spacing-xl);
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-lg);
+}
+
+.competition-logo-container {
+  text-align: center;
+}
+
+.competition-logo {
+  max-width: 100%;
+  height: auto;
+  max-height: 180px;
+}
+
+.competition-standings-container {
+  margin-top: var(--tm-spacing-xl);
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-lg);
+  overflow-x: auto;
+}
+
+.competition-standings-container h2 {
+  margin-top: 0;
+  color: var(--tm-primary);
+  border-bottom: 2px solid var(--tm-border);
+  padding-bottom: var(--tm-spacing-sm);
+  margin-bottom: var(--tm-spacing-lg);
+}
+
+.competition-standings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.competition-standings-table th {
+  text-align: left;
+  padding: var(--tm-spacing-sm);
+  background-color: var(--tm-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.competition-standings-table td {
+  padding: var(--tm-spacing-sm);
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.standing-row:hover {
+  background-color: var(--tm-light-bg);
+}
+
+.standing-position {
+  font-weight: 600;
+  color: var(--tm-primary);
+}
+
+.standing-team {
+  font-weight: 600;
+}
+
+.competition-additional-info {
+  margin-top: var(--tm-spacing-xl);
+}
+
+/* ==== SQUAD LIST PAGE STYLING ==== */
+.transfermarkt-squad-list-container {
+  max-width: 1200px;
+  margin: var(--tm-spacing-xl) auto;
+  padding: 0 var(--tm-spacing-md);
+}
+
+.transfermarkt-squad-list-container h2 {
+  color: var(--tm-primary);
+  border-bottom: 2px solid var(--tm-border);
+  padding-bottom: var(--tm-spacing-sm);
+  margin-bottom: var(--tm-spacing-lg);
+}
+
+.squad-list-description {
+  margin-bottom: var(--tm-spacing-lg);
+}
+
+.squad-list-table-container {
+  background-color: white;
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-card-shadow);
+  padding: var(--tm-spacing-md);
+  overflow-x: auto;
+  margin-bottom: var(--tm-spacing-xl);
+}
+
+.squad-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.squad-list-table th {
+  text-align: left;
+  padding: var(--tm-spacing-sm);
+  background-color: var(--tm-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.squad-list-table td {
+  padding: var(--tm-spacing-sm);
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.squad-player-row:hover {
+  background-color: var(--tm-light-bg);
+}
+
+.player-imported {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.button {
+  display: inline-block;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-md);
+  border-radius: var(--tm-radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--tm-transition);
+  text-align: center;
+}
+
+.button-small {
+  padding: var(--tm-spacing-xs) var(--tm-spacing-sm);
+  font-size: 0.85rem;
+}
+
+.button-view {
+  background-color: var(--tm-secondary);
+  color: white;
+}
+
+.button-view:hover {
+  background-color: #0284c7;
+}
+
+.button-import {
+  background-color: var(--tm-accent);
+  color: white;
+}
+
+.button-import:hover {
+  background-color: #ea580c;
+}
+
+.back-link {
+  margin-top: var(--tm-spacing-lg);
+}
+
+.back-link a {
+  color: var(--tm-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.back-link a:before {
+  content: "←";
+  margin-right: var(--tm-spacing-xs);
+}
+
+/* ==== VIEW FILTERS STYLING ==== */
+.transfermarkt-view-filters {
+  background-color: var(--tm-light-bg);
+  border-radius: var(--tm-radius-lg);
+  padding: var(--tm-spacing-lg);
+  margin-bottom: var(--tm-spacing-xl);
+}
+
+.filters-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.filters-title {
+  margin-top: 0;
+  margin-bottom: var(--tm-spacing-md);
+  font-size: 1.2rem;
+  color: var(--tm-primary);
+}
+
+.transfermarkt-view-filters .form-item {
+  margin-bottom: var(--tm-spacing-md);
+}
+
+.transfermarkt-view-filters label {
+  display: block;
+  margin-bottom: var(--tm-spacing-xs);
+  font-weight: 600;
+  color: var(--tm-primary);
+}
+
+.transfermarkt-view-filters input[type="text"],
+.transfermarkt-view-filters select {
+  width: 100%;
+  padding: var(--tm-spacing-sm);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius-sm);
+  background-color: white;
+}
+
+.transfermarkt-view-filters .form-actions {
+  margin-top: var(--tm-spacing-md);
+}
+
+.transfermarkt-view-filters .form-submit {
+  background-color: var(--tm-secondary);
+  color: white;
+  border: none;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-lg);
+  border-radius: var(--tm-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--tm-transition);
+}
+
+.transfermarkt-view-filters .form-submit:hover {
+  background-color: var(--tm-primary);
+}
+
+/* ==== PAGER STYLING ==== */
+.transfermarkt-view-pager {
+  margin: var(--tm-spacing-xl) 0;
+  text-align: center;
+}
+
+.pager__items {
+  display: inline-flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: var(--tm-radius-md);
+  overflow: hidden;
+  box-shadow: var(--tm-card-shadow);
+}
+
+.pager__item {
+  margin: 0;
+}
+
+.pager__item a,
+.pager__item.is-active span {
+  display: inline-block;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-md);
+  background-color: white;
+  color: var(--tm-text);
+  text-decoration: none;
+  min-width: 2.5rem;
+}
+
+.pager__item a:hover {
+  background-color: var(--tm-light-bg);
+}
+
+.pager__item.is-active span {
+  background-color: var(--tm-secondary);
+  color: white;
+  font-weight: 600;
+}
+
+/* ==== COMPETITION CARD STYLING ==== */
+.transfermarkt-competition-card {
+  background-color: white;
+  border-radius: var(--tm-radius-md);
+  box-shadow: var(--tm-card-shadow);
+  overflow: hidden;
+  transition: var(--tm-transition);
+  height: 100%;
+}
+
+.transfermarkt-competition-card:hover {
+  box-shadow: var(--tm-hover-shadow);
+  transform: translateY(-3px);
+}
+
+.competition-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.competition-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.competition-card-header {
+  background-color: var(--tm-primary);
+  color: white;
+  padding: var(--tm-spacing-md);
+  border-bottom: 3px solid #10b981; /* Green accent color for competitions */
+}
+
+.competition-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.competition-season {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: var(--tm-spacing-xs);
+}
+
+.competition-card-body {
+  padding: var(--tm-spacing-md);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.competition-logo-container {
+  text-align: center;
+  margin-bottom: var(--tm-spacing-md);
+  height: 160px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.competition-logo-container img,
+.competition-logo-img {
+  max-height: 130px;
+  width: auto;
+  object-fit: contain;
+}
+
+.competition-details {
+  flex-grow: 1;
+}
+
+.competition-country,
+.competition-clubs,
+.competition-type,
+.competition-market-value {
+  margin-bottom: var(--tm-spacing-sm);
+  font-size: 0.95rem;
+}
+
+.competition-view-link {
+  margin-top: auto;
+  padding-top: var(--tm-spacing-md);
+  text-align: center;
+}
+
+.competition-link {
+  display: inline-block;
+  background-color: #10b981; /* Green for competitions */
+  color: white;
+  padding: var(--tm-spacing-sm) var(--tm-spacing-lg);
+  border-radius: var(--tm-radius-md);
+  font-weight: 600;
+  transition: var(--tm-transition);
+}
+
+.competition-link:hover {
+  background-color: var(--tm-primary);
+}
+
+/* ==== RESPONSIVE STYLES ==== */
+@media (max-width: 768px) {
+  .player-profile-container,
+  .team-profile-container,
+  .competition-profile-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .player-photo-container,
+  .team-logo-container,
+  .competition-logo-container {
+    margin-bottom: var(--tm-spacing-lg);
+  }
+  
+  .player-detail-row,
+  .team-detail-row,
+  .competition-detail-row {
+    flex-direction: column;
+  }
+  
+  .player-detail-label,
+  .team-detail-label,
+  .competition-detail-label {
+    width: 100%;
+    margin-bottom: var(--tm-spacing-xs);
+  }
+  
+  .transfermarkt-players-container,
+  .transfermarkt-teams-container,
+  .transfermarkt-competitions-container,
+  .squad-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .transfermarkt-players-container,
+  .transfermarkt-teams-container,
+  .transfermarkt-competitions-container,
+  .squad-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .title-area h1 {
+    font-size: 1.5rem;
+  }
+  
+  .competition-standings-table {
+    font-size: 0.85rem;
+  }
+}

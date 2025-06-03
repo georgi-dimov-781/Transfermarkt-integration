@@ -1,0 +1,8 @@
+administer transfermarkt integration:
+  title: 'Administer Transfermarkt Integration'
+  description: 'Configure Transfermarkt API settings and import data.'
+  restrict access: true
+
+view transfermarkt data:
+  title: 'View Transfermarkt Data'
+  description: 'View player, team, and competition data imported from Transfermarkt.' 

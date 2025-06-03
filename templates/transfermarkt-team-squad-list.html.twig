@@ -1,0 +1,93 @@
+{#
+/**
+ * @file
+ * Template for displaying the team squad list from Transfermarkt.
+ *
+ * This template is used by the TeamSquadController to display the complete
+ * squad from Transfermarkt for a team. It shows all players from the API
+ * and provides buttons to import individual players.
+ *
+ * Players that have already been imported are highlighted and have a "View player"
+ * button instead of an "Add player as node" button. This allows administrators
+ * to selectively import only the players they need instead of importing the
+ * entire squad at once.
+ *
+ * Available variables:
+ * - team_name: The name of the team.
+ * - team_id: The Transfermarkt ID of the team.
+ * - team_nid: The node ID of the team.
+ * - squad_players: Array of squad player data from the API.
+ * - imported_players: Array of already imported player IDs, keyed by Transfermarkt ID.
+ */
+#}
+
+{# Main container for the squad list page #}
+<div class="transfermarkt-squad-list-container">
+  <h2>{{ 'Squad Players for %team_name'|t({'%team_name': team_name}) }}</h2>
+  
+  {# Description explaining the purpose of this page #}
+  <div class="squad-list-description">
+    <p>{{ 'Below is the complete squad for this team from Transfermarkt. You can import individual players by clicking the "Add player as node" button.'|t }}</p>
+  </div>
+  
+  {% if squad_players %}
+    {# Table displaying all players in the squad from Transfermarkt API #}
+    <div class="squad-list-table-container">
+      <table class="squad-list-table">
+        <thead>
+          <tr>
+            <th>{{ 'Name'|t }}</th>
+            <th>{{ 'Position'|t }}</th>
+            <th>{{ 'Nationality'|t }}</th>
+            <th>{{ 'Age'|t }}</th>
+            <th>{{ 'Market Value'|t }}</th>
+            <th>{{ 'Actions'|t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in squad_players %}
+            {# Apply special class for already imported players #}
+            <tr class="squad-player-row {% if player.id in imported_players|keys %}player-imported{% endif %}">
+              <td class="player-name">
+                {{ player.name }}
+              </td>
+              <td class="player-position">
+                {{ player.position }}
+              </td>
+              <td class="player-nationality">
+                {% if player.nationality is defined and player.nationality %}
+                  {{ player.nationality|join(', ') }}
+                {% endif %}
+              </td>
+              <td class="player-age">
+                {{ player.age }}
+              </td>
+              <td class="player-market-value">
+                {% if player.marketValue is defined and player.marketValue %}
+                  {{ player.marketValue|number_format(0, '.', ',') }} €
+                {% endif %}
+              </td>
+              <td class="player-actions">
+                {% if player.id in imported_players|keys %}
+                  {# For already imported players, show a link to view the player node #}
+                  <a href="{{ path('entity.node.canonical', {'node': imported_players[player.id]}) }}" class="button button-small button-view">{{ 'View player'|t }}</a>
+                {% else %}
+                  {# For players not yet imported, show a button to import the player individually #}
+                  <a href="{{ path('transfermarkt_integration.import_squad_player', {'node': team_nid, 'player_id': player.id}) }}" class="button button-small button-import">{{ 'Add player as node'|t }}</a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {# Message displayed when no players were found in the API response #}
+    <div class="no-players-message">{{ 'No squad players found for this team.'|t }}</div>
+  {% endif %}
+  
+  {# Link back to the team page #}
+  <div class="back-link">
+    <a href="{{ path('entity.node.canonical', {'node': team_nid}) }}">{{ 'Back to team'|t }}</a>
+  </div>
+</div> 

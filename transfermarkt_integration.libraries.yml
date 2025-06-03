@@ -1,0 +1,5 @@
+transfermarkt_styles:
+  version: 1.x
+  css:
+    theme:
+      css/transfermarkt_integration.css: {} 

@@ -1,0 +1,179 @@
+{#
+/**
+ * @file
+ * Theme override to display a node of type competition in full view mode.
+ *
+ * Available variables:
+ * - node: The node entity with limited access to object properties and methods.
+ * - content: All node items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - attributes: HTML attributes for the containing element.
+ * - title_attributes: Same as attributes, except applied to the main title
+ *   tag that appears in the template.
+ * - content_attributes: Same as attributes, except applied to the main
+ *   content tag that appears in the template.
+ *
+ * @see template_preprocess_node()
+ */
+#}
+{%
+  set classes = [
+    'competition',
+    'node',
+    'node--' ~ node.bundle|clean_class,
+    'node--competition',
+    node.isPromoted() ? 'node--promoted',
+    node.isSticky() ? 'node--sticky',
+    not node.isPublished() ? 'node--unpublished',
+    view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
+  ]
+%}
+<article{{ attributes.addClass(classes) }}>
+  <div class="node__title">
+    <div class="title-area">
+      <div class="container">
+        <div class="title-area__content">
+          <h1{{ title_attributes }}>{{ label }}</h1>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div{{ content_attributes.addClass('node__content') }}>
+    <div class="container">
+      <div class="competition-profile-container">
+        <div class="competition-logo-container">
+          {% if competition_logo_url %}
+            <img src="{{ competition_logo_url }}" alt="{{ competition_logo_alt }}" class="competition-logo" />
+          {% elseif content.field_logo %}
+            {{ content.field_logo }}
+          {% else %}
+            <div class="no-logo-placeholder">
+              <span class="no-logo-text">{{ 'No logo available'|t }}</span>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="competition-details-container">
+          {% if content.field_country %}
+            <div class="competition-detail-row">
+              <div class="competition-detail-label">{{ 'Country'|t }}:</div>
+              <div class="competition-detail-value">{{ content.field_country }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_season %}
+            <div class="competition-detail-row">
+              <div class="competition-detail-label">{{ 'Season'|t }}:</div>
+              <div class="competition-detail-value">{{ content.field_season }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_clubs %}
+            <div class="competition-detail-row">
+              <div class="competition-detail-label">{{ 'Number of Clubs'|t }}:</div>
+              <div class="competition-detail-value">{{ content.field_clubs }}</div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_total_market_value %}
+            <div class="competition-detail-row">
+              <div class="competition-detail-label">{{ 'Total Market Value'|t }}:</div>
+              <div class="competition-detail-value market-value">
+                {% if total_market_value_formatted %}
+                  {{ total_market_value_formatted }}
+                {% else %}
+                  {{ content.field_total_market_value }}
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+          
+          {% if content.field_mean_market_value %}
+            <div class="competition-detail-row">
+              <div class="competition-detail-label">{{ 'Mean Market Value'|t }}:</div>
+              <div class="competition-detail-value market-value">
+                {% if mean_market_value_formatted %}
+                  {{ mean_market_value_formatted }}
+                {% else %}
+                  {{ content.field_mean_market_value }}
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      {% if standings is defined and standings|length > 0 %}
+        <div class="competition-standings-container">
+          <h2>{{ 'Standings'|t }}</h2>
+          <table class="competition-standings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ 'Club'|t }}</th>
+                {% if standings[0].matches is not null %}<th>{{ 'MP'|t }}</th>{% endif %}
+                {% if standings[0].wins is not null %}<th>{{ 'W'|t }}</th>{% endif %}
+                {% if standings[0].draws is not null %}<th>{{ 'D'|t }}</th>{% endif %}
+                {% if standings[0].losses is not null %}<th>{{ 'L'|t }}</th>{% endif %}
+                {% if standings[0].goals_for is not null %}<th>{{ 'GF'|t }}</th>{% endif %}
+                {% if standings[0].goals_against is not null %}<th>{{ 'GA'|t }}</th>{% endif %}
+                {% if standings[0].goals_for is not null and standings[0].goals_against is not null %}
+                  <th>{{ 'GD'|t }}</th>
+                {% endif %}
+                {% if standings[0].points is not null %}<th>{{ 'Pts'|t }}</th>{% endif %}
+                {% if standings[0].market_value_formatted %}<th>{{ 'Market Value'|t }}</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in standings %}
+                <tr class="standing-row">
+                  <td class="standing-position">{{ team.position|default(loop.index) }}</td>
+                  <td class="standing-team">{{ team.name }}</td>
+                  {% if standings[0].matches is not null %}
+                    <td class="standing-matches">{{ team.matches }}</td>
+                  {% endif %}
+                  {% if standings[0].wins is not null %}
+                    <td class="standing-wins">{{ team.wins }}</td>
+                  {% endif %}
+                  {% if standings[0].draws is not null %}
+                    <td class="standing-draws">{{ team.draws }}</td>
+                  {% endif %}
+                  {% if standings[0].losses is not null %}
+                    <td class="standing-losses">{{ team.losses }}</td>
+                  {% endif %}
+                  {% if standings[0].goals_for is not null %}
+                    <td class="standing-goals-for">{{ team.goals_for }}</td>
+                  {% endif %}
+                  {% if standings[0].goals_against is not null %}
+                    <td class="standing-goals-against">{{ team.goals_against }}</td>
+                  {% endif %}
+                  {% if standings[0].goals_for is not null and standings[0].goals_against is not null %}
+                    <td class="standing-goal-difference">{{ team.goals_for - team.goals_against }}</td>
+                  {% endif %}
+                  {% if standings[0].points is not null %}
+                    <td class="standing-points">{{ team.points }}</td>
+                  {% endif %}
+                  {% if standings[0].market_value_formatted %}
+                    <td class="standing-market-value">
+                      {% if team.market_value_formatted %}
+                        {{ team.market_value_formatted }}
+                      {% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      
+      {# Render any remaining fields that weren't explicitly included above #}
+      <div class="competition-additional-info">
+        {{ content|without('field_logo', 'field_country', 'field_season', 'field_clubs', 'field_total_market_value', 'field_mean_market_value') }}
+      </div>
+    </div>
+  </div>
+</article> 

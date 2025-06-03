@@ -1,0 +1,726 @@
+<?php
+
+/**
+ * @file
+ * Contains transfermarkt_integration.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\file\Entity\File;
+use Drupal\node\Entity\Node;
+use Drupal\image\Entity\ImageStyle;
+
+/**
+ * Implements hook_drush_command_alter().
+ */
+function transfermarkt_integration_drush_command_alter(&$command) {
+  // This hook is called by Drush to discover commands
+  if (class_exists('\Drupal\transfermarkt_integration\Commands\TransfermarktCommands')) {
+    \Drupal::logger('transfermarkt_integration')->notice('TransfermarktCommands class exists and should be loaded.');
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function transfermarkt_integration_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the transfermarkt_integration module.
+    case 'help.page.transfermarkt_integration':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Integrates Transfermarkt API to display football players, teams, and competitions data.') . '</p>';
+      $output .= '<p>' . t('This module provides content types for Players, Teams, and Competitions, along with blocks for displaying latest transfers and top players.') . '</p>';
+      
+      $output .= '<h3>' . t('Transfermarkt Integration administration pages') . '</h3>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('<a href="@update_url">Manual Update</a> - Update data for players, teams and competitions.', ['@update_url' => '/admin/config/services/transfermarkt/update']) . '</li>';
+      $output .= '<li>' . t('<a href="@import_player_url">Import Player</a> - Import a specific player by Transfermarkt ID.', ['@import_player_url' => '/admin/config/services/transfermarkt/import-player']) . '</li>';
+      $output .= '<li>' . t('<a href="@import_team_url">Import Team</a> - Import a specific team by Transfermarkt ID.', ['@import_team_url' => '/admin/config/services/transfermarkt/import-team']) . '</li>';
+      $output .= '<li>' . t('<a href="@import_competition_url">Import Competition</a> - Import a specific competition by Transfermarkt ID.', ['@import_competition_url' => '/admin/config/services/transfermarkt/import-competition']) . '</li>';
+      $output .= '</ul>';
+      
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function transfermarkt_integration_cron() {
+  // Get the last time we ran the update
+  $last_update = \Drupal::state()->get('transfermarkt_integration.last_update', 0);
+  $interval = \Drupal::config('transfermarkt_integration.settings')->get('update_interval');
+  $interval = !empty($interval) ? $interval : 86400; // Default to 24 hours
+  
+  // Only update if the interval has passed
+  $request_time = \Drupal::time()->getRequestTime();
+  if (($request_time - $last_update) > $interval) {
+    // Get our service and update data
+    $transfermarkt_service = \Drupal::service('transfermarkt_integration.api_service');
+    $transfermarkt_service->updateAllData();
+    
+    // Update the last update time
+    \Drupal::state()->set('transfermarkt_integration.last_update', $request_time);
+    \Drupal::logger('transfermarkt_integration')->notice('Transfermarkt data updated via cron.');
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function transfermarkt_integration_theme() {
+  return [
+    'node__player__full' => [
+      'template' => 'node--player--full',
+      'base hook' => 'node',
+    ],
+    'node__team__full' => [
+      'template' => 'node--team--full',
+      'base hook' => 'node',
+    ],
+    'node__competition__full' => [
+      'template' => 'node--competition--full',
+      'base hook' => 'node',
+    ],
+    'transfermarkt_player_card' => [
+      'variables' => [
+        'name' => NULL,
+        'photo' => NULL,
+        'age' => NULL,
+        'nationality' => NULL,
+        'position' => NULL,
+        'market_value' => NULL,
+        'current_club' => NULL,
+        'url' => NULL,
+      ],
+      'template' => 'transfermarkt-player-card',
+    ],
+    'transfermarkt_team_card' => [
+      'variables' => [
+        'name' => NULL,
+        'logo' => NULL,
+        'league' => NULL,
+        'position' => NULL,
+        'coach' => NULL,
+        'market_value' => NULL,
+        'url' => NULL,
+      ],
+      'template' => 'transfermarkt-team-card',
+    ],
+    'transfermarkt_team_squad_list' => [
+      'variables' => [
+        'team_name' => NULL,
+        'team_id' => NULL,
+        'team_nid' => NULL,
+        'squad_players' => [],
+        'imported_players' => [],
+      ],
+      'template' => 'transfermarkt-team-squad-list',
+    ],
+    'views_view__players' => [
+      'template' => 'views-view--players',
+      'base hook' => 'views_view',
+    ],
+    'views_view__teams' => [
+      'template' => 'views-view--teams',
+      'base hook' => 'views_view',
+    ],
+    'views_view__competitions' => [
+      'template' => 'views-view--competitions',
+      'base hook' => 'views_view',
+    ],
+    'views_view_fields__players' => [
+      'template' => 'views-view-fields--players',
+      'base hook' => 'views_view_fields',
+    ],
+    'views_view_fields__teams' => [
+      'template' => 'views-view-fields--teams',
+      'base hook' => 'views_view_fields',
+    ],
+    'views_view_fields__competitions' => [
+      'template' => 'views-view-fields--competitions',
+      'base hook' => 'views_view_fields',
+    ],
+    'views_view_table__players' => [
+      'template' => 'views-view-table--players',
+      'base hook' => 'views_view_table',
+    ],
+    'views_view_table__teams' => [
+      'template' => 'views-view-table--teams',
+      'base hook' => 'views_view_table',
+    ],
+    'views_view_table__competitions' => [
+      'template' => 'views-view-table--competitions',
+      'base hook' => 'views_view_table',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function transfermarkt_integration_entity_presave(EntityInterface $entity) {
+  // Update market value field when saving player entities
+  if ($entity->getEntityTypeId() === 'node' && $entity->bundle() === 'player') {
+    if ($entity->hasField('field_transfermarkt_id') && !$entity->get('field_transfermarkt_id')->isEmpty()) {
+      $transfermarkt_id = $entity->get('field_transfermarkt_id')->value;
+      $transfermarkt_service = \Drupal::service('transfermarkt_integration.api_service');
+      
+      // Try to update market value from API
+      try {
+        $player_data = $transfermarkt_service->getPlayerData($transfermarkt_id);
+        if (!empty($player_data['marketValue'])) {
+          $entity->set('field_market_value', $player_data['marketValue']);
+        }
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('transfermarkt_integration')->error('Error updating player market value: @error', ['@error' => $e->getMessage()]);
+      }
+    }
+  }
+}
+
+/**
+ * Format a market value number to a human-readable string.
+ *
+ * @param int $value
+ *   The market value as an integer.
+ *
+ * @return string
+ *   The formatted market value, e.g. "200 Mln. Euro" or "300 Thousand Euro".
+ */
+function transfermarkt_integration_format_market_value($value) {
+  if (empty($value)) {
+    return '';
+  }
+  
+  if ($value >= 1000000) {
+    $formatted_value = number_format($value / 1000000, 0) . ' Mln. Euro';
+  } elseif ($value >= 1000) {
+    $formatted_value = number_format($value / 1000, 0) . ' Thousand Euro';
+  } else {
+    $formatted_value = number_format($value, 0) . ' Euro';
+  }
+  
+  return $formatted_value;
+}
+
+/**
+ * Format a date of birth to YYYY-MM-DD format.
+ *
+ * @param string $date
+ *   The date string to format.
+ *
+ * @return string
+ *   The formatted date in YYYY-MM-DD format.
+ */
+function transfermarkt_integration_format_date_of_birth($date) {
+  if (empty($date)) {
+    return '';
+  }
+  
+  // Try to create a DateTime object from the date
+  try {
+    $date_obj = new \DateTime($date);
+    return $date_obj->format('Y-m-d');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('transfermarkt_integration')->error('Error formatting date of birth: @error', ['@error' => $e->getMessage()]);
+    return $date;
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function transfermarkt_integration_preprocess_node(&$variables) {
+  $node = $variables['node'];
+  
+  // Process player nodes
+  if ($node->getType() == 'player') {
+    // Process photo field
+    if ($node->hasField('field_photo') && !$node->get('field_photo')->isEmpty()) {
+      $file_id = $node->get('field_photo')->target_id;
+      $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+      if ($file) {
+        $variables['player_photo_url'] = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+        $variables['player_photo_alt'] = t('Photo of @name', ['@name' => $node->getTitle()]);
+      }
+    }
+    
+    // Add player data for templates
+    $variables['player_data'] = [
+      'name' => $node->getTitle(),
+    ];
+    
+    // Add nationality
+    if ($node->hasField('field_nationality') && !$node->get('field_nationality')->isEmpty()) {
+      $term_id = $node->get('field_nationality')->target_id;
+      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($term_id);
+      if ($term) {
+        $variables['player_data']['nationality'] = $term->getName();
+      }
+    }
+    
+    // Add age
+    if ($node->hasField('field_age') && !$node->get('field_age')->isEmpty()) {
+      $variables['player_data']['age'] = $node->get('field_age')->value;
+    }
+    
+    // Add date of birth
+    if ($node->hasField('field_date_of_birth') && !$node->get('field_date_of_birth')->isEmpty()) {
+      $dob_value = $node->get('field_date_of_birth')->value;
+      $variables['player_data']['date_of_birth'] = transfermarkt_integration_format_date_of_birth($dob_value);
+      
+      // Also provide a formatted date for the template
+      $variables['date_of_birth_formatted'] = transfermarkt_integration_format_date_of_birth($dob_value);
+    }
+    
+    // Add position
+    if ($node->hasField('field_position') && !$node->get('field_position')->isEmpty()) {
+      $term_id = $node->get('field_position')->target_id;
+      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($term_id);
+      if ($term) {
+        $variables['player_data']['position'] = $term->getName();
+      }
+    }
+    
+    // Add market value
+    if ($node->hasField('field_market_value') && !$node->get('field_market_value')->isEmpty()) {
+      $raw_value = $node->get('field_market_value')->value;
+      $variables['player_data']['market_value'] = transfermarkt_integration_format_market_value($raw_value);
+      
+      // Also provide a formatted value for the template
+      $variables['market_value_formatted'] = transfermarkt_integration_format_market_value($raw_value);
+    }
+    
+    // Add current club
+    if ($node->hasField('field_current_club') && !$node->get('field_current_club')->isEmpty()) {
+      $club_id = $node->get('field_current_club')->target_id;
+      $club_node = \Drupal::entityTypeManager()->getStorage('node')->load($club_id);
+      if ($club_node) {
+        $variables['player_data']['current_club'] = $club_node->getTitle();
+        $variables['player_data']['club_url'] = $club_node->toUrl()->toString();
+      }
+    }
+    
+    // Check if we're viewing the full node
+    if ($variables['view_mode'] == 'full') {
+      // Add custom classes to the node
+      $variables['attributes']['class'][] = 'transfermarkt-player-node';
+      
+      // Ensure content is properly processed
+      $variables['content_attributes']['class'][] = 'node__content';
+      $variables['title_attributes']['class'][] = 'player-title';
+      
+      // Log that we're processing the player node
+      \Drupal::logger('transfermarkt_integration')->notice('Player node processed: @name', ['@name' => $node->getTitle()]);
+    }
+  }
+  
+  // Process team nodes
+  if ($node->getType() == 'team') {
+    // Check if we're viewing the full node
+    if ($variables['view_mode'] == 'full') {
+      // Add custom classes to the node
+      $variables['attributes']['class'][] = 'transfermarkt-team-node';
+      
+      // Ensure content is properly processed
+      $variables['content_attributes']['class'][] = 'node__content';
+      $variables['title_attributes']['class'][] = 'team-title';
+      
+      // Process logo field
+      if ($node->hasField('field_logo') && !$node->get('field_logo')->isEmpty()) {
+        $file_id = $node->get('field_logo')->target_id;
+        $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+        if ($file) {
+          $variables['team_logo_url'] = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+          $variables['team_logo_alt'] = t('Logo of @name', ['@name' => $node->getTitle()]);
+        }
+      }
+      
+      // Add market value formatting for teams
+      if ($node->hasField('field_market_value') && !$node->get('field_market_value')->isEmpty()) {
+        $raw_value = $node->get('field_market_value')->value;
+        $variables['market_value_formatted'] = transfermarkt_integration_format_market_value($raw_value);
+      }
+      
+      // Load squad players for this team
+      $variables['squad_players'] = _transfermarkt_integration_get_team_squad($node->id());
+      
+      // Check if the current user is an admin for template display
+      $variables['is_admin'] = \Drupal::currentUser()->hasPermission('administer transfermarkt integration');
+      
+      // Log that we're processing the team node
+      \Drupal::logger('transfermarkt_integration')->notice('Team node processed: @name with @count squad players', [
+        '@name' => $node->getTitle(),
+        '@count' => count($variables['squad_players']),
+      ]);
+    }
+  }
+  
+  // Process competition nodes
+  if ($node->getType() == 'competition') {
+    // Check if we're viewing the full node
+    if ($variables['view_mode'] == 'full') {
+      // Add custom classes to the node
+      $variables['attributes']['class'][] = 'transfermarkt-competition-node';
+      
+      // Ensure content is properly processed
+      $variables['content_attributes']['class'][] = 'node__content';
+      $variables['title_attributes']['class'][] = 'competition-title';
+      
+      // Process logo field
+      if ($node->hasField('field_logo') && !$node->get('field_logo')->isEmpty()) {
+        $file_id = $node->get('field_logo')->target_id;
+        $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+        if ($file) {
+          $variables['competition_logo_url'] = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+          $variables['competition_logo_alt'] = t('Logo of @name', ['@name' => $node->getTitle()]);
+        }
+      }
+      
+      // Format market values
+      if ($node->hasField('field_total_market_value') && !$node->get('field_total_market_value')->isEmpty()) {
+        $raw_value = $node->get('field_total_market_value')->value;
+        $variables['total_market_value_formatted'] = transfermarkt_integration_format_market_value($raw_value);
+      }
+      
+      if ($node->hasField('field_mean_market_value') && !$node->get('field_mean_market_value')->isEmpty()) {
+        $raw_value = $node->get('field_mean_market_value')->value;
+        $variables['mean_market_value_formatted'] = transfermarkt_integration_format_market_value($raw_value);
+      }
+      
+      // Load competition standings (teams)
+      $variables['standings'] = [];
+      
+      // Check if we have clubs field with the standings data
+      if ($node->hasField('field_standings_data') && !$node->get('field_standings_data')->isEmpty()) {
+        $standings_data = $node->get('field_standings_data')->value;
+        $standings = json_decode($standings_data, TRUE);
+        
+        if (!empty($standings) && is_array($standings)) {
+          $loop_index = 1; // Initialize counter variable
+          foreach ($standings as $team) {
+            $team_data = [
+              'id' => $team['id'] ?? 'unknown',
+              'name' => $team['name'] ?? t('Unknown Team'),
+              'market_value_formatted' => isset($team['marketValue']) ? transfermarkt_integration_format_market_value($team['marketValue']) : NULL,
+              // Add more standings data if available in the API response
+              'position' => $team['position'] ?? $loop_index,
+              'points' => $team['points'] ?? NULL,
+              'matches' => $team['matches'] ?? NULL,
+              'wins' => $team['wins'] ?? NULL,
+              'draws' => $team['draws'] ?? NULL,
+              'losses' => $team['losses'] ?? NULL,
+              'goals_for' => $team['goalsFor'] ?? NULL,
+              'goals_against' => $team['goalsAgainst'] ?? NULL,
+            ];
+            
+            // Don't look up teams in our system since we're not importing them
+            $variables['standings'][] = $team_data;
+            $loop_index++; // Increment counter for next iteration
+          }
+        }
+      }
+      
+      // Check if the current user is an admin for template display
+      $variables['is_admin'] = \Drupal::currentUser()->hasPermission('administer transfermarkt integration');
+      
+      // Log that we're processing the competition node
+      \Drupal::logger('transfermarkt_integration')->notice('Competition node processed: @name', [
+        '@name' => $node->getTitle()
+      ]);
+    }
+  }
+}
+
+/**
+ * Helper function to get a team's squad players.
+ *
+ * This function retrieves all player nodes that have the specified team set as
+ * their current club. It is used by the team node template to display the
+ * current squad of players that have been imported into the system.
+ *
+ * Note that this function only returns players that have already been imported
+ * into Drupal as nodes. To see the complete squad from Transfermarkt, including
+ * players that haven't been imported yet, administrators can use the "View
+ * Transfermarkt Squad" button, which leads to the squad page where individual
+ * players can be imported selectively.
+ *
+ * This approach replaces the previous functionality where entire squads could be
+ * imported at once during team import, which was resource intensive.
+ *
+ * @param int $team_nid
+ *   The team node ID.
+ *
+ * @return array
+ *   Array of player data for the squad, containing:
+ *   - name: The player's name.
+ *   - url: URL to the player's node.
+ *   - photo: URL to the player's photo (if available).
+ *   - position: The player's position (if available).
+ */
+function _transfermarkt_integration_get_team_squad($team_nid) {
+  $squad_players = [];
+  
+  // Query for players with this team as current club
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'player')
+    ->condition('field_current_club', $team_nid)
+    ->condition('status', 1)
+    ->accessCheck(FALSE)
+    ->sort('title');
+  $player_nids = $query->execute();
+  
+  if (!empty($player_nids)) {
+    $player_nodes = Node::loadMultiple($player_nids);
+    $file_url_generator = \Drupal::service('file_url_generator');
+    
+    foreach ($player_nodes as $player_node) {
+      $player_data = [
+        'name' => $player_node->getTitle(),
+        'url' => $player_node->toUrl()->toString(),
+      ];
+      
+      // Get player photo
+      if ($player_node->hasField('field_photo') && !$player_node->get('field_photo')->isEmpty()) {
+        $file_id = $player_node->get('field_photo')->target_id;
+        if ($file_id) {
+          $file = File::load($file_id);
+          if ($file) {
+            $player_data['photo'] = $file_url_generator->generateAbsoluteString($file->getFileUri());
+          }
+        }
+      }
+      
+      // Get player position
+      if ($player_node->hasField('field_position') && !$player_node->get('field_position')->isEmpty()) {
+        $term_id = $player_node->get('field_position')->target_id;
+        if ($term_id) {
+          $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($term_id);
+          if ($term) {
+            $player_data['position'] = $term->getName();
+          }
+        }
+      }
+      
+      $squad_players[] = $player_data;
+    }
+  }
+  
+  return $squad_players;
+}
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function transfermarkt_integration_preprocess_block(&$variables) {
+  // Add specific classes to our blocks
+  if (isset($variables['plugin_id'])) {
+    if ($variables['plugin_id'] == 'transfermarkt_top_valuable_players') {
+      $variables['attributes']['class'][] = 'transfermarkt-block';
+      $variables['attributes']['class'][] = 'top-players-block';
+    }
+    elseif ($variables['plugin_id'] == 'transfermarkt_latest_transfers') {
+      $variables['attributes']['class'][] = 'transfermarkt-block';
+      $variables['attributes']['class'][] = 'latest-transfers-block';
+    }
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function transfermarkt_integration_page_attachments(array &$attachments) {
+  // Attach our CSS library to all pages
+  $attachments['#attached']['library'][] = 'transfermarkt_integration/transfermarkt_styles';
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ */
+function transfermarkt_integration_preprocess_views_view(&$variables) {
+  $view = $variables['view'];
+  $view_id = $view->id();
+  
+  // Add custom classes based on the view ID
+  if ($view_id == 'players') {
+    $variables['attributes']['class'][] = 'transfermarkt-players-view-wrapper';
+    
+    // Log that we're processing the players view
+    \Drupal::logger('transfermarkt_integration')->notice('Players view processed');
+  }
+  elseif ($view_id == 'teams') {
+    $variables['attributes']['class'][] = 'transfermarkt-teams-view-wrapper';
+    
+    // Log that we're processing the teams view
+    \Drupal::logger('transfermarkt_integration')->notice('Teams view processed');
+  }
+  elseif ($view_id == 'competitions') {
+    $variables['attributes']['class'][] = 'transfermarkt-competitions-view-wrapper';
+    
+    // Log that we're processing the competitions view
+    \Drupal::logger('transfermarkt_integration')->notice('Competitions view processed');
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_grid().
+ */
+function transfermarkt_integration_preprocess_views_view_grid(&$variables) {
+  $view = $variables['view'];
+  $view_id = $view->id();
+  
+  // Add custom classes to grid items based on the view ID
+  if ($view_id == 'players') {
+    foreach ($variables['rows'] as &$row) {
+      foreach ($row['content'] as &$column) {
+        $column['attributes']->addClass('transfermarkt-player-grid-item');
+      }
+    }
+  }
+  elseif ($view_id == 'teams') {
+    foreach ($variables['rows'] as &$row) {
+      foreach ($row['content'] as &$column) {
+        $column['attributes']->addClass('transfermarkt-team-grid-item');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function transfermarkt_integration_views_pre_render($view) {
+  // Add our CSS library when rendering our views
+  if ($view->id() == 'players' || $view->id() == 'teams' || $view->id() == 'competitions') {
+    // Always attach our CSS library
+    $view->element['#attached']['library'][] = 'transfermarkt_integration/transfermarkt_styles';
+    
+    // Add player card and team card classes to each row
+    if ($view->id() == 'players') {
+      if (isset($view->style_plugin)) {
+        // Add specific classes based on the style plugin
+        $view->element['#attributes']['class'][] = 'transfermarkt-players-view-wrapper';
+        
+        // For table style, ensure rows get proper classes
+        if ($view->style_plugin->getPluginId() == 'table') {
+          foreach ($view->result as $row) {
+            $row->transfermarkt_player_card_class = 'transfermarkt-player-card';
+          }
+        }
+      }
+    } elseif ($view->id() == 'teams') {
+      if (isset($view->style_plugin)) {
+        // Add specific classes based on the style plugin
+        $view->element['#attributes']['class'][] = 'transfermarkt-teams-view-wrapper';
+        
+        // For table style, ensure rows get proper classes
+        if ($view->style_plugin->getPluginId() == 'table') {
+          foreach ($view->result as $row) {
+            $row->transfermarkt_team_card_class = 'transfermarkt-team-card';
+          }
+        }
+      }
+    } elseif ($view->id() == 'competitions') {
+      if (isset($view->style_plugin)) {
+        // Add specific classes based on the style plugin
+        $view->element['#attributes']['class'][] = 'transfermarkt-competitions-view-wrapper';
+        
+        // For table style, ensure rows get proper classes
+        if ($view->style_plugin->getPluginId() == 'table') {
+          foreach ($view->result as $row) {
+            $row->transfermarkt_competition_card_class = 'transfermarkt-competition-card';
+          }
+        }
+      }
+    }
+    
+    // Force a high cache tag to ensure styles are properly applied
+    $view->element['#cache']['tags'][] = 'transfermarkt_integration_views';
+    
+    // Log that we're attaching styles
+    \Drupal::logger('transfermarkt_integration')->notice('Attached styles to @view view with @plugin style plugin', [
+      '@view' => $view->id(),
+      '@plugin' => isset($view->style_plugin) ? $view->style_plugin->getPluginId() : 'unknown',
+    ]);
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field().
+ */
+function transfermarkt_integration_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+  $row = $variables['row'];
+  
+  // Process image fields for players view
+  if ($view->id() == 'players' && $field->field == 'field_photo') {
+    if (isset($row->_entity) && $row->_entity->hasField('field_photo') && !$row->_entity->get('field_photo')->isEmpty()) {
+      $file_id = $row->_entity->get('field_photo')->target_id;
+      $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+      if ($file) {
+        $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+        $alt = $row->_entity->label();
+        $variables['output'] = [
+          '#type' => 'html_tag',
+          '#tag' => 'img',
+          '#attributes' => [
+            'src' => $file_url,
+            'alt' => t('Photo of @name', ['@name' => $alt]),
+            'class' => ['player-photo-img'],
+          ],
+        ];
+      }
+    }
+  }
+  
+  // Process image fields for teams view
+  if ($view->id() == 'teams' && $field->field == 'field_logo') {
+    if (isset($row->_entity) && $row->_entity->hasField('field_logo') && !$row->_entity->get('field_logo')->isEmpty()) {
+      $file_id = $row->_entity->get('field_logo')->target_id;
+      $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+      if ($file) {
+        $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+        $alt = $row->_entity->label();
+        $variables['output'] = [
+          '#type' => 'html_tag',
+          '#tag' => 'img',
+          '#attributes' => [
+            'src' => $file_url,
+            'alt' => t('Logo of @name', ['@name' => $alt]),
+            'class' => ['team-logo-img'],
+          ],
+        ];
+      }
+    }
+  }
+  
+  // Process image fields for competitions view
+  if ($view->id() == 'competitions' && $field->field == 'field_logo') {
+    if (isset($row->_entity) && $row->_entity->hasField('field_logo') && !$row->_entity->get('field_logo')->isEmpty()) {
+      $file_id = $row->_entity->get('field_logo')->target_id;
+      $file = \Drupal::entityTypeManager()->getStorage('file')->load($file_id);
+      if ($file) {
+        $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+        $alt = $row->_entity->label();
+        $variables['output'] = [
+          '#type' => 'html_tag',
+          '#tag' => 'img',
+          '#attributes' => [
+            'src' => $file_url,
+            'alt' => t('Logo of @name', ['@name' => $alt]),
+            'class' => ['competition-logo-img'],
+          ],
+        ];
+      }
+    }
+  }
+} 

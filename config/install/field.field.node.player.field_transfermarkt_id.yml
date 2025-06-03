@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_transfermarkt_id
+    - node.type.player
+  module:
+    - transfermarkt_integration
+id: node.player.field_transfermarkt_id
+field_name: field_transfermarkt_id
+entity_type: node
+bundle: player
+label: 'Transfermarkt ID'
+description: 'The unique identifier from Transfermarkt.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string 

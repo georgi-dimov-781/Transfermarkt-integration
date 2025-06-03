@@ -1,0 +1,97 @@
+{#
+/**
+ * @file
+ * Default theme implementation for displaying a view as a table.
+ *
+ * Available variables:
+ * - attributes: Remaining HTML attributes for the element.
+ *   - class: HTML classes that can be used to style contextually through CSS.
+ * - title : The title of this group of rows.
+ * - header: The table header columns.
+ *   - attributes: Remaining HTML attributes for the element.
+ *   - content: HTML classes to apply to each header cell, indexed by
+ *   the header's key.
+ *   - default_classes: A flag indicating whether default classes should be
+ *     used.
+ * - caption_needed: Is the caption tag needed.
+ * - caption: The caption for this table.
+ * - accessibility_description: Extended description for the table details.
+ * - accessibility_summary: Summary for the table details.
+ * - rows: Table row items. Rows are keyed by row number.
+ *   - attributes: HTML classes to apply to each row.
+ *   - columns: Row column items. Columns are keyed by column number.
+ *     - attributes: HTML classes to apply to each column.
+ *     - content: The column content.
+ *   - default_classes: A flag indicating whether default classes should be
+ *     used.
+ * - responsive: A flag indicating whether table is responsive.
+ * - sticky: A flag indicating whether table header is sticky.
+ * - summary_element: A render array with table summary information (if any).
+ *
+ * @see template_preprocess_views_view_table()
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="transfermarkt-competitions-container">
+  {% for row in rows %}
+    <div class="transfermarkt-competition-card">
+      <div class="competition-card-inner">
+        {% if row.columns.title %}
+          <div class="competition-card-header">
+            <h3 class="competition-name">{{ row.columns.title.content }}</h3>
+            {% if row.columns.field_season %}
+              <div class="competition-season">{{ row.columns.field_season.content }}</div>
+            {% endif %}
+          </div>
+        {% endif %}
+        
+        <div class="competition-card-body">
+          {% if row.columns.field_logo %}
+            <div class="competition-logo-container">
+              {{ row.columns.field_logo.content }}
+            </div>
+          {% else %}
+            <div class="competition-logo-container">
+              <div class="no-logo-placeholder">
+                <span class="no-logo-text">{{ 'No logo available'|t }}</span>
+              </div>
+            </div>
+          {% endif %}
+          
+          <div class="competition-details">
+            {% if row.columns.field_country %}
+              <div class="competition-country">
+                <span class="label">{{ 'Country:'|t }}</span> {{ row.columns.field_country.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_clubs %}
+              <div class="competition-clubs">
+                <span class="label">{{ 'Teams:'|t }}</span> {{ row.columns.field_clubs.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_competition_type %}
+              <div class="competition-type">
+                <span class="label">{{ 'Type:'|t }}</span> {{ row.columns.field_competition_type.content }}
+              </div>
+            {% endif %}
+            
+            {% if row.columns.field_total_market_value %}
+              <div class="competition-market-value">
+                <span class="label">{{ 'Total Value:'|t }}</span> {{ row.columns.field_total_market_value.content }}
+              </div>
+            {% endif %}
+          </div>
+          
+          {% if row.columns.view_node %}
+            <div class="competition-view-link">
+              <a href="{{ row.columns.view_node.content|render|striptags|trim }}" class="competition-link">{{ 'View Competition'|t }}</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div> 
