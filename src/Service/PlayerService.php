@@ -181,53 +181,53 @@ class PlayerService {
       // Handle current club - API now returns club as an object
       if ($player_node->hasField('field_current_club') && isset($player_data['club']) && isset($player_data['club']['id'])) {
         try {
-          // Try to find the team node
-          $team_nodes = $this->entityTypeManager->getStorage('node')->loadByProperties([
-            'type' => 'team',
-            'field_transfermarkt_id' => $player_data['club']['id'],
+        // Try to find the team node
+        $team_nodes = $this->entityTypeManager->getStorage('node')->loadByProperties([
+          'type' => 'team',
+          'field_transfermarkt_id' => $player_data['club']['id'],
+        ]);
+        
+        if (!empty($team_nodes)) {
+          $team_node = reset($team_nodes);
+          $player_node->set('field_current_club', $team_node->id());
+          $this->logger->notice('Found existing team for player: @team (NID: @nid)', [
+            '@team' => $team_node->getTitle(),
+            '@nid' => $team_node->id(),
           ]);
-          
-          if (!empty($team_nodes)) {
-            $team_node = reset($team_nodes);
-            $player_node->set('field_current_club', $team_node->id());
-            $this->logger->notice('Found existing team for player: @team (NID: @nid)', [
-              '@team' => $team_node->getTitle(),
-              '@nid' => $team_node->id(),
-            ]);
-          }
-          else {
+        }
+        else {
             // Try to import the team if it doesn't exist, but don't fail if it can't be imported
             $this->logger->notice('Team does not exist, attempting to import team ID: @id', [
-              '@id' => $player_data['club']['id'],
-            ]);
+            '@id' => $player_data['club']['id'],
+          ]);
+          
+          $team_service = \Drupal::service('transfermarkt_integration.team_service');
+          $team_nid = $team_service->importTeam($player_data['club']['id'], TRUE, FALSE);
+          
+          if ($team_nid) {
+            // Make sure the team node is fully saved and available
+            $team_storage = $this->entityTypeManager->getStorage('node');
+            $team_storage->resetCache([$team_nid]);
+            $team_entity = $team_storage->load($team_nid);
             
-            $team_service = \Drupal::service('transfermarkt_integration.team_service');
-            $team_nid = $team_service->importTeam($player_data['club']['id'], TRUE, FALSE);
-            
-            if ($team_nid) {
-              // Make sure the team node is fully saved and available
-              $team_storage = $this->entityTypeManager->getStorage('node');
-              $team_storage->resetCache([$team_nid]);
-              $team_entity = $team_storage->load($team_nid);
-              
-              if ($team_entity) {
-                $player_node->set('field_current_club', $team_nid);
-                $this->logger->notice('Imported new team for player: @team (NID: @nid)', [
-                  '@team' => $team_entity->getTitle(),
-                  '@nid' => $team_nid,
-                ]);
-              }
-              else {
-                $this->logger->warning('Team was imported but could not be loaded: @nid. Player will be saved without club reference.', [
-                  '@nid' => $team_nid,
-                ]);
-              }
-            }
-            else {
-              $this->logger->warning('Failed to import team with ID: @id. Player will be saved without club reference.', [
-                '@id' => $player_data['club']['id'],
+            if ($team_entity) {
+              $player_node->set('field_current_club', $team_nid);
+              $this->logger->notice('Imported new team for player: @team (NID: @nid)', [
+                '@team' => $team_entity->getTitle(),
+                '@nid' => $team_nid,
               ]);
             }
+            else {
+                $this->logger->warning('Team was imported but could not be loaded: @nid. Player will be saved without club reference.', [
+                '@nid' => $team_nid,
+              ]);
+            }
+          }
+          else {
+              $this->logger->warning('Failed to import team with ID: @id. Player will be saved without club reference.', [
+              '@id' => $player_data['club']['id'],
+            ]);
+          }
           }
         }
         catch (\Exception $e) {
